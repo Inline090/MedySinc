@@ -1,42 +1,76 @@
 # MedSync
 
-MedSync is a personal medical document storage app. The idea is simple: upload medical documents, keep them organized in one place, and use AI to make them easier to understand later.
+MedSync is a personal medical document storage app. Upload medical documents,
+keep them organised in one place, and use AI to make them easier to understand
+later.
 
-## What It Does
+## Features
 
 - User registration and login
-- Upload medical documents like reports, prescriptions, bills, and summaries
-- Store document details such as title, type, tags, and notes
-- View and manage uploaded documents
-- Search and filter documents
-- Extract useful text from uploaded files
-- Generate simple AI summaries of medical documents
-- Ask questions based on stored documents
+- Upload medical documents such as reports, prescriptions, bills, and summaries
+- Store document details including title, type, tags, and notes
+- View, search, and filter uploaded documents
+- Extract text from uploaded files
+- Generate AI summaries of medical documents
+- Ask questions answered from your own documents, with sources cited
 
 ## Tech Stack
 
 ### Frontend
 
-- React
-- CSS / Tailwind CSS
+- React 19
+- Vite
 
 ### Backend
 
-- Node.js
-- Express.js
-- MongoDB
-- Mongoose
-- JWT authentication
-- Multer for file uploads
+- Python 3.13
+- FastAPI
+- PostgreSQL
+- pgvector, for document embeddings
+- Uvicorn
 
 ## Project Structure
 
 ```txt
 medsync/
   apps/
-    frontent/
-    backend/
-  docs/
-  infra/
-  scripts/
+    frontend/            React client
+    api/                 FastAPI service
+      app/
+        controllers/
+        core/
+        db/
+        middlewares/
+        models/
+        repositories/
+        routers/
+        schemas/
+        utils/
 ```
+
+## Getting Started
+
+### API
+
+```bash
+cd apps/api
+uv sync
+uv run uvicorn app.main:app --reload --port 8000
+```
+
+The API runs at http://127.0.0.1:8000 and its interactive documentation is at
+http://127.0.0.1:8000/docs.
+
+### Frontend
+
+```bash
+cd apps/frontend
+npm install
+npm run dev
+```
+
+The client runs at http://localhost:5173.
+
+## License
+
+MIT
