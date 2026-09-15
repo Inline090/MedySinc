@@ -61,6 +61,14 @@ uv run uvicorn app.main:app --reload --port 8000
 The API runs at http://127.0.0.1:8000 and its interactive documentation is at
 http://127.0.0.1:8000/docs.
 
+### Lint and format
+
+```bash
+cd apps/api
+uv run ruff check .
+uv run ruff format .
+```
+
 ### Frontend
 
 ```bash
