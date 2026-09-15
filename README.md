@@ -50,6 +50,21 @@ medsync/
 
 ## Getting Started
 
+### Database
+
+```powershell
+.\scripts\db-start.ps1
+```
+
+Starts a PostgreSQL 17 container with pgvector on port 5434, backed by the
+`medsync-pgdata` volume.
+
+```powershell
+.\scripts\db-stop.ps1
+```
+
+Stops the container without discarding its data.
+
 ### API
 
 ```bash
