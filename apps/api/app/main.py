@@ -1,10 +1,21 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.db.session import connect, disconnect
 from app.routers.healthcheck import router as healthcheck_router
 
-app = FastAPI(title="MedSync API", version="0.1.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await connect()
+    yield
+    await disconnect()
+
+
+app = FastAPI(title="MedSync API", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
