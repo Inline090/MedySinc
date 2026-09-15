@@ -54,12 +54,21 @@ medsync/
 
 ```bash
 cd apps/api
+cp .env.example .env
 uv sync
-uv run uvicorn app.main:app --reload --port 8000
+uv run uvicorn app.main:app --reload
 ```
 
 The API runs at http://127.0.0.1:8000 and its interactive documentation is at
 http://127.0.0.1:8000/docs.
+
+Configuration is read from `apps/api/.env`:
+
+| Variable | Description | Default |
+| --- | --- | --- |
+| `PORT` | Port the API listens on | `8000` |
+| `DATABASE_URL` | PostgreSQL connection string | required |
+| `CORS_ORIGIN` | Allowed browser origins, comma separated | `http://localhost:5173` |
 
 ### Lint and format
 
