@@ -65,6 +65,16 @@ Starts a PostgreSQL 17 container with pgvector on port 5434, backed by the
 
 Stops the container without discarding its data.
 
+### Migrations
+
+```bash
+cd apps/api
+uv run python -m app.db.migrate
+```
+
+Applies every `.sql` file in `app/db/migrations/` in filename order, recording
+each one in the `schema_migrations` table so it runs at most once.
+
 ### API
 
 ```bash
