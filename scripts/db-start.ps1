@@ -4,24 +4,27 @@ $Name = "medsync-postgres"
 $Volume = "medsync-pgdata"
 $HostPort = 5434
 
-if (docker ps --filter "name=^/$Name$" --format "{{.Names}}") {
-    Write-Host "$Name is already running on port $HostPort"
-    exit 0
+$running = docker ps --filter "name=^/$Name$" --format "{{.Names}}"
+$exists = docker ps -a --filter "name=^/$Name$" --format "{{.Names}}"
+
+if (-not $running) {
+    if ($exists) {
+        docker start $Name | Out-Null
+    }
+    else {
+        docker run -d `
+            --name $Name `
+            --restart unless-stopped `
+            -e POSTGRES_USER=postgres `
+            -e POSTGRES_PASSWORD=postgres `
+            -e POSTGRES_DB=medsync `
+            -p "${HostPort}:5432" `
+            -v "${Volume}:/var/lib/postgresql/data" `
+            pgvector/pgvector:pg17 | Out-Null
+    }
 }
 
-if (docker ps -a --filter "name=^/$Name$" --format "{{.Names}}") {
-    docker start $Name | Out-Null
-}
-else {
-    docker run -d `
-        --name $Name `
-        -e POSTGRES_USER=postgres `
-        -e POSTGRES_PASSWORD=postgres `
-        -e POSTGRES_DB=medsync `
-        -p "${HostPort}:5432" `
-        -v "${Volume}:/var/lib/postgresql/data" `
-        pgvector/pgvector:pg17 | Out-Null
-}
+docker update --restart unless-stopped $Name | Out-Null
 
 $attempts = 0
 $ready = $false
