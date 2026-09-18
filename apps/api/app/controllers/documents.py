@@ -1,15 +1,20 @@
 from pathlib import Path
 from typing import Annotated
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import asyncpg
 import filetype
-from fastapi import Depends, File, Form, UploadFile
+from fastapi import Depends, File, Form, Query, UploadFile
 
 from app.core.config import settings
 from app.core.exceptions import AppError
 from app.middlewares.auth import get_current_user
-from app.repositories.documents import create_document
+from app.repositories.documents import (
+    count_documents,
+    create_document,
+    find_document_for_user,
+    list_documents,
+)
 from app.schemas.documents import DocumentType
 from app.storage import get_storage
 
@@ -86,5 +91,49 @@ async def upload_document(
         tags=parse_tags(tags),
         notes=notes,
     )
+
+    return {"document": document_detail(document)}
+
+
+async def list_user_documents(
+    user: Annotated[asyncpg.Record, Depends(get_current_user)],
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    document_type: Annotated[DocumentType | None, Query()] = None,
+    tag: Annotated[str | None, Query()] = None,
+) -> dict[str, object]:
+    type_filter = document_type.value if document_type is not None else None
+    tag_filter = tag.strip().lower() if tag is not None else None
+
+    documents = await list_documents(
+        user_id=user["id"],
+        limit=limit,
+        offset=offset,
+        document_type=type_filter,
+        tag=tag_filter,
+    )
+
+    total = await count_documents(
+        user_id=user["id"],
+        document_type=type_filter,
+        tag=tag_filter,
+    )
+
+    return {
+        "documents": [document_summary(item) for item in documents],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+async def get_user_document(
+    user: Annotated[asyncpg.Record, Depends(get_current_user)],
+    document_id: UUID,
+) -> dict[str, object]:
+    document = await find_document_for_user(document_id, user["id"])
+
+    if document is None:
+        raise AppError("Document not found", 404)
 
     return {"document": document_detail(document)}
