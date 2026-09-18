@@ -2,7 +2,8 @@ from uuid import UUID
 
 import asyncpg
 from asyncpg.exceptions import UniqueViolationError
-from fastapi import Response
+from fastapi import Request, Response
+from jwt import InvalidTokenError
 
 from app.core.cookies import (
     ACCESS_COOKIE,
@@ -12,8 +13,13 @@ from app.core.cookies import (
 )
 from app.core.exceptions import AppError
 from app.core.security import hash_password, verify_password_or_dummy
-from app.core.tokens import create_access_token, create_refresh_token
-from app.repositories.users import create_user, find_user_by_email
+from app.core.tokens import (
+    REFRESH_TOKEN_TYPE,
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+)
+from app.repositories.users import create_user, find_user_by_email, find_user_by_id
 from app.schemas.auth import LoginRequest, RegisterRequest
 
 
@@ -30,6 +36,11 @@ def _public_user(user: asyncpg.Record) -> dict[str, object]:
 def _set_auth_cookies(response: Response, user_id: UUID) -> None:
     response.set_cookie(ACCESS_COOKIE, create_access_token(user_id), **access_cookie_options())
     response.set_cookie(REFRESH_COOKIE, create_refresh_token(user_id), **refresh_cookie_options())
+
+
+def _clear_auth_cookies(response: Response) -> None:
+    response.delete_cookie(ACCESS_COOKIE, path="/")
+    response.delete_cookie(REFRESH_COOKIE, path="/")
 
 
 async def register_user(payload: RegisterRequest) -> dict[str, object]:
@@ -64,3 +75,34 @@ async def login_user(payload: LoginRequest, response: Response) -> dict[str, obj
     _set_auth_cookies(response, user["id"])
 
     return {"user": _public_user(user)}
+
+
+async def refresh_tokens(request: Request, response: Response) -> dict[str, object]:
+    token = request.cookies.get(REFRESH_COOKIE)
+
+    if token is None:
+        raise AppError("Missing refresh token", 401)
+
+    try:
+        payload = decode_token(token)
+    except InvalidTokenError as error:
+        raise AppError("Invalid or expired refresh token", 401) from error
+
+    if payload.get("type") != REFRESH_TOKEN_TYPE:
+        raise AppError("Invalid or expired refresh token", 401)
+
+    user_id = UUID(str(payload["sub"]))
+    user = await find_user_by_id(user_id)
+
+    if user is None:
+        raise AppError("Invalid or expired refresh token", 401)
+
+    _set_auth_cookies(response, user_id)
+
+    return {"user": _public_user(user)}
+
+
+async def logout_user(response: Response) -> dict[str, str]:
+    _clear_auth_cookies(response)
+
+    return {"message": "Logged out"}
