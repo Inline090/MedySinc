@@ -12,6 +12,7 @@ from app.middlewares.auth import get_current_user
 from app.repositories.documents import (
     count_documents,
     create_document,
+    delete_document,
     find_document_for_user,
     list_documents,
 )
@@ -141,3 +142,17 @@ async def get_user_document(
         raise AppError("Document not found", 404)
 
     return {"document": document_detail(document)}
+
+
+async def delete_user_document(
+    user: Annotated[asyncpg.Record, Depends(get_current_user)],
+    document_id: UUID,
+) -> dict[str, str]:
+    storage_key = await delete_document(document_id, user["id"])
+
+    if storage_key is None:
+        raise AppError("Document not found", 404)
+
+    await get_storage().delete(storage_key)
+
+    return {"message": "Document deleted"}
