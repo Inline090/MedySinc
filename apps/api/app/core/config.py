@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     CORS_ORIGIN: str = "http://localhost:3000"
     STORAGE_ROOT: str = "storage"
+    MAX_UPLOAD_BYTES: int = 10 * 1024 * 1024
     JWT_SECRET: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 14

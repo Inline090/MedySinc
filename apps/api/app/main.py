@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.db.session import connect, disconnect
 from app.routers.auth import router as auth_router
+from app.routers.documents import router as documents_router
 from app.routers.healthcheck import router as healthcheck_router
 
 
@@ -29,6 +30,7 @@ app.add_middleware(
 
 app.include_router(healthcheck_router)
 app.include_router(auth_router)
+app.include_router(documents_router)
 
 register_exception_handlers(app)
 
