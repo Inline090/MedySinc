@@ -101,9 +101,11 @@ async def list_user_documents(
     offset: Annotated[int, Query(ge=0)] = 0,
     document_type: Annotated[DocumentType | None, Query()] = None,
     tag: Annotated[str | None, Query()] = None,
+    search: Annotated[str | None, Query(min_length=2, max_length=100)] = None,
 ) -> dict[str, object]:
     type_filter = document_type.value if document_type is not None else None
     tag_filter = tag.strip().lower() if tag is not None else None
+    search_filter = search.strip() if search is not None else None
 
     documents = await list_documents(
         user_id=user["id"],
@@ -111,12 +113,14 @@ async def list_user_documents(
         offset=offset,
         document_type=type_filter,
         tag=tag_filter,
+        search=search_filter,
     )
 
     total = await count_documents(
         user_id=user["id"],
         document_type=type_filter,
         tag=tag_filter,
+        search=search_filter,
     )
 
     return {

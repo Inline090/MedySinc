@@ -60,6 +60,7 @@ def _list_filters(
     user_id: UUID,
     document_type: str | None,
     tag: str | None,
+    search: str | None,
 ) -> tuple[str, list[object]]:
     conditions = ["user_id = $1"]
     params: list[object] = [user_id]
@@ -72,6 +73,10 @@ def _list_filters(
         params.append(tag)
         conditions.append(f"tags @> ARRAY[${len(params)}]::text[]")
 
+    if search is not None:
+        params.append(search)
+        conditions.append(f"search_vector @@ websearch_to_tsquery('english', ${len(params)})")
+
     return " AND ".join(conditions), params
 
 
@@ -82,9 +87,10 @@ async def list_documents(
     offset: int,
     document_type: str | None = None,
     tag: str | None = None,
+    search: str | None = None,
 ) -> list[asyncpg.Record]:
     pool = get_pool()
-    where, params = _list_filters(user_id, document_type, tag)
+    where, params = _list_filters(user_id, document_type, tag, search)
 
     params.extend([limit, offset])
 
@@ -105,9 +111,10 @@ async def count_documents(
     user_id: UUID,
     document_type: str | None = None,
     tag: str | None = None,
+    search: str | None = None,
 ) -> int:
     pool = get_pool()
-    where, params = _list_filters(user_id, document_type, tag)
+    where, params = _list_filters(user_id, document_type, tag, search)
 
     return await pool.fetchval(
         f"SELECT count(*) FROM documents WHERE {where}",
