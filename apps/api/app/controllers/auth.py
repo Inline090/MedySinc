@@ -1,8 +1,9 @@
+from typing import Annotated
 from uuid import UUID
 
 import asyncpg
 from asyncpg.exceptions import UniqueViolationError
-from fastapi import Request, Response
+from fastapi import Depends, Request, Response
 from jwt import InvalidTokenError
 
 from app.core.cookies import (
@@ -19,6 +20,7 @@ from app.core.tokens import (
     create_refresh_token,
     decode_token,
 )
+from app.middlewares.auth import get_current_user
 from app.repositories.users import create_user, find_user_by_email, find_user_by_id
 from app.schemas.auth import LoginRequest, RegisterRequest
 
@@ -106,3 +108,9 @@ async def logout_user(response: Response) -> dict[str, str]:
     _clear_auth_cookies(response)
 
     return {"message": "Logged out"}
+
+
+async def read_current_user(
+    user: Annotated[asyncpg.Record, Depends(get_current_user)],
+) -> dict[str, object]:
+    return {"user": _public_user(user)}
