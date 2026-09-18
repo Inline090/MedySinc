@@ -43,7 +43,7 @@ def register_exception_handlers(app: FastAPI) -> None:
             fields.append({"field": name, "message": error["msg"]})
 
         return JSONResponse(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             content={"error": {"message": "Received data is not valid", "fields": fields}},
         )
 
