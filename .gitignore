@@ -25,6 +25,9 @@ venv/
 .pytest_cache/
 .ruff_cache/
 
+# uploaded documents
+apps/api/storage/
+
 # OS/editor files
 .DS_Store
 Thumbs.db
