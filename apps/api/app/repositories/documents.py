@@ -18,7 +18,10 @@ _LIST_COLUMNS = """
     updated_at
 """
 
-_DETAIL_COLUMNS = f"{_LIST_COLUMNS},\n    user_id,\n    storage_key,\n    extracted_text"
+_DETAIL_COLUMNS = (
+    f"{_LIST_COLUMNS},\n    user_id,\n    storage_key,\n    extracted_text,\n"
+    f"    summary,\n    summary_model"
+)
 
 
 async def create_document(
@@ -185,4 +188,19 @@ async def update_document_processing(
         status,
         error,
         extracted_text,
+    )
+
+
+async def update_document_summary(document_id: UUID, *, summary: str, model: str) -> None:
+    pool = get_pool()
+
+    await pool.execute(
+        """
+        UPDATE documents
+        SET summary = $2, summary_model = $3, updated_at = NOW()
+        WHERE id = $1
+        """,
+        document_id,
+        summary,
+        model,
     )

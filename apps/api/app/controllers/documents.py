@@ -7,6 +7,7 @@ import filetype
 from fastapi import BackgroundTasks, Depends, File, Form, Query, UploadFile
 
 from app.ai.ingestion import ingest_document
+from app.ai.summaries import generate_document_summary
 from app.core.config import settings
 from app.core.exceptions import AppError
 from app.middlewares.auth import get_current_user
@@ -40,7 +41,12 @@ def document_summary(document: asyncpg.Record) -> dict[str, object]:
 
 
 def document_detail(document: asyncpg.Record) -> dict[str, object]:
-    return {**document_summary(document), "extracted_text": document["extracted_text"]}
+    return {
+        **document_summary(document),
+        "extracted_text": document["extracted_text"],
+        "summary": document["summary"],
+        "summary_model": document["summary_model"],
+    }
 
 
 def parse_tags(raw: str | None) -> list[str]:
@@ -160,3 +166,17 @@ async def delete_user_document(
     await get_storage().delete(storage_key)
 
     return {"message": "Document deleted"}
+
+
+async def summarize_user_document(
+    user: Annotated[asyncpg.Record, Depends(get_current_user)],
+    document_id: UUID,
+) -> dict[str, object]:
+    document = await find_document_for_user(document_id, user["id"])
+
+    if document is None:
+        raise AppError("Document not found", 404)
+
+    summary = await generate_document_summary(document_id)
+
+    return {"summary": summary, "model": settings.LLM_MODEL}

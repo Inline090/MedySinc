@@ -1,0 +1,3 @@
+ALTER TABLE documents
+    ADD COLUMN IF NOT EXISTS summary TEXT,
+    ADD COLUMN IF NOT EXISTS summary_model VARCHAR(100);

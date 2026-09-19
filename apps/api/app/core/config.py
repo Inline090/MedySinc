@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     EMBEDDING_MODEL: str = "BAAI/bge-m3"
     EMBEDDING_DIMENSION: int = 1024
     MODEL_CACHE_DIR: str | None = None
+    AI_API_KEY: str | None = None
+    LLM_MODEL: str = "gemini-2.5-flash"
     JWT_SECRET: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 14
