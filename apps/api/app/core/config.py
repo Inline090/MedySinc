@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     CORS_ORIGIN: str = "http://localhost:3000"
     STORAGE_ROOT: str = "storage"
     MAX_UPLOAD_BYTES: int = 10 * 1024 * 1024
+    EMBEDDING_MODEL: str = "BAAI/bge-m3"
+    EMBEDDING_DIMENSION: int = 1024
+    MODEL_CACHE_DIR: str | None = None
     JWT_SECRET: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 14

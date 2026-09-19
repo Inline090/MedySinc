@@ -28,6 +28,9 @@ venv/
 # uploaded documents
 apps/api/storage/
 
+# downloaded embedding models
+apps/api/models/
+
 # OS/editor files
 .DS_Store
 Thumbs.db
