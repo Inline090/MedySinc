@@ -93,7 +93,7 @@ Configuration is read from `apps/api/.env`:
 | --- | --- | --- |
 | `PORT` | Port the API listens on | `8000` |
 | `DATABASE_URL` | PostgreSQL connection string | required |
-| `CORS_ORIGIN` | Allowed browser origins, comma separated | `http://localhost:5173` |
+| `CORS_ORIGIN` | Allowed browser origins, comma separated | `http://localhost:3000` |
 
 ### Lint and format
 
@@ -101,6 +101,13 @@ Configuration is read from `apps/api/.env`:
 cd apps/api
 uv run ruff check .
 uv run ruff format .
+```
+
+Both run automatically on `git commit` for staged Python files. Install the hook
+once per clone:
+
+```bash
+uv run --project apps/api pre-commit install
 ```
 
 ### Frontend

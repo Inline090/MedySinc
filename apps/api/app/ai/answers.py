@@ -51,8 +51,7 @@ async def answer_question(*, user_id: UUID, question: str) -> dict[str, object]:
         return {"answer": REFUSAL, "sources": [], "model": None}
 
     prompt = (
-        f"Excerpts from the patient's documents:\n\n{build_context(chunks)}"
-        f"\n\nQuestion: {question}"
+        f"Excerpts from the patient's documents:\n\n{build_context(chunks)}\n\nQuestion: {question}"
     )
 
     answer = await get_llm().complete(QA_SYSTEM_INSTRUCTION, prompt)

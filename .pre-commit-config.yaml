@@ -1,0 +1,15 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --project apps/api ruff check --fix --force-exclude
+        language: system
+        files: ^apps/api/.*\.py$
+        require_serial: true
+      - id: ruff-format
+        name: ruff format
+        entry: uv run --project apps/api ruff format --force-exclude
+        language: system
+        files: ^apps/api/.*\.py$
+        require_serial: true
