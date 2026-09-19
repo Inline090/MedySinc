@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     AI_API_KEY: str | None = None
     LLM_MODEL: str = "gemini-2.5-flash"
     HNSW_EF_SEARCH: int = 100
+    MIN_SIMILARITY: float = 0.45
     JWT_SECRET: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 14

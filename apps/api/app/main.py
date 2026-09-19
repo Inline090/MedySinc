@@ -9,6 +9,7 @@ from app.db.session import connect, disconnect
 from app.routers.auth import router as auth_router
 from app.routers.documents import router as documents_router
 from app.routers.healthcheck import router as healthcheck_router
+from app.routers.qa import router as qa_router
 
 
 @asynccontextmanager
@@ -31,6 +32,7 @@ app.add_middleware(
 app.include_router(healthcheck_router)
 app.include_router(auth_router)
 app.include_router(documents_router)
+app.include_router(qa_router)
 
 register_exception_handlers(app)
 
