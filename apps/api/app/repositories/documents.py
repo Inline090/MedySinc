@@ -18,7 +18,7 @@ _LIST_COLUMNS = """
     updated_at
 """
 
-_DETAIL_COLUMNS = f"{_LIST_COLUMNS},\n    storage_key,\n    extracted_text"
+_DETAIL_COLUMNS = f"{_LIST_COLUMNS},\n    user_id,\n    storage_key,\n    extracted_text"
 
 
 async def create_document(
@@ -133,6 +133,19 @@ async def find_document_for_user(document_id: UUID, user_id: UUID) -> asyncpg.Re
         """,
         document_id,
         user_id,
+    )
+
+
+async def find_document_by_id(document_id: UUID) -> asyncpg.Record | None:
+    pool = get_pool()
+
+    return await pool.fetchrow(
+        f"""
+        SELECT {_DETAIL_COLUMNS}
+        FROM documents
+        WHERE id = $1
+        """,
+        document_id,
     )
 
 
