@@ -7,7 +7,7 @@ from app.ai.embeddings import get_embeddings
 from app.ai.extraction import extract_text
 from app.core.exceptions import AppError
 from app.repositories.chunks import replace_document_chunks
-from app.repositories.documents import find_document_by_id
+from app.repositories.documents import find_document_by_id, update_document_processing
 from app.storage import get_storage
 
 
@@ -17,23 +17,31 @@ async def ingest_document(document_id: UUID) -> int:
     if document is None:
         raise AppError("Document not found", 404)
 
-    data = await get_storage().read(document["storage_key"])
-    text = await anyio.to_thread.run_sync(extract_text, data, document["mime_type"])
+    await update_document_processing(document_id, status="processing")
 
-    chunks = chunk_text(text)
+    try:
+        data = await get_storage().read(document["storage_key"])
+        text = await anyio.to_thread.run_sync(extract_text, data, document["mime_type"])
 
-    if not chunks:
-        raise AppError("No text could be extracted from this document", 422)
+        chunks = chunk_text(text)
 
-    vectors = await get_embeddings().embed([chunk.content for chunk in chunks])
+        if not chunks:
+            raise AppError("No text could be extracted from this document", 422)
 
-    await replace_document_chunks(
-        document_id=document_id,
-        user_id=document["user_id"],
-        chunks=[
-            (chunk.index, chunk.content, chunk.token_count, vector)
-            for chunk, vector in zip(chunks, vectors, strict=True)
-        ],
-    )
+        vectors = await get_embeddings().embed([chunk.content for chunk in chunks])
+
+        await replace_document_chunks(
+            document_id=document_id,
+            user_id=document["user_id"],
+            chunks=[
+                (chunk.index, chunk.content, chunk.token_count, vector)
+                for chunk, vector in zip(chunks, vectors, strict=True)
+            ],
+        )
+    except Exception as error:
+        await update_document_processing(document_id, status="failed", error=str(error))
+        raise
+
+    await update_document_processing(document_id, status="processed", extracted_text=text)
 
     return len(chunks)

@@ -4,8 +4,9 @@ from uuid import UUID, uuid4
 
 import asyncpg
 import filetype
-from fastapi import Depends, File, Form, Query, UploadFile
+from fastapi import BackgroundTasks, Depends, File, Form, Query, UploadFile
 
+from app.ai.ingestion import ingest_document
 from app.core.config import settings
 from app.core.exceptions import AppError
 from app.middlewares.auth import get_current_user
@@ -58,6 +59,7 @@ def parse_tags(raw: str | None) -> list[str]:
 
 
 async def upload_document(
+    background: BackgroundTasks,
     user: Annotated[asyncpg.Record, Depends(get_current_user)],
     file: Annotated[UploadFile, File()],
     title: Annotated[str | None, Form()] = None,
@@ -92,6 +94,8 @@ async def upload_document(
         tags=parse_tags(tags),
         notes=notes,
     )
+
+    background.add_task(ingest_document, document["id"])
 
     return {"document": document_detail(document)}
 

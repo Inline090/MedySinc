@@ -17,25 +17,24 @@ async def replace_document_chunks(
 ) -> None:
     pool = get_pool()
 
-    async with pool.acquire() as connection:
-        async with connection.transaction():
-            await connection.execute(
-                "DELETE FROM document_chunks WHERE document_id = $1",
-                document_id,
-            )
+    async with pool.acquire() as connection, connection.transaction():
+        await connection.execute(
+            "DELETE FROM document_chunks WHERE document_id = $1",
+            document_id,
+        )
 
-            await connection.executemany(
-                """
+        await connection.executemany(
+            """
                 INSERT INTO document_chunks (
                     document_id, user_id, chunk_index, content, token_count, embedding
                 )
                 VALUES ($1, $2, $3, $4, $5, $6::vector)
                 """,
-                [
-                    (document_id, user_id, index, content, token_count, _to_vector(embedding))
-                    for index, content, token_count, embedding in chunks
-                ],
-            )
+            [
+                (document_id, user_id, index, content, token_count, _to_vector(embedding))
+                for index, content, token_count, embedding in chunks
+            ],
+        )
 
 
 async def count_document_chunks(document_id: UUID) -> int:

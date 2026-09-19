@@ -161,3 +161,28 @@ async def delete_document(document_id: UUID, user_id: UUID) -> str | None:
         document_id,
         user_id,
     )
+
+
+async def update_document_processing(
+    document_id: UUID,
+    *,
+    status: str,
+    extracted_text: str | None = None,
+    error: str | None = None,
+) -> None:
+    pool = get_pool()
+
+    await pool.execute(
+        """
+        UPDATE documents
+        SET processing_status = $2,
+            processing_error = $3,
+            extracted_text = coalesce($4, extracted_text),
+            updated_at = NOW()
+        WHERE id = $1
+        """,
+        document_id,
+        status,
+        error,
+        extracted_text,
+    )
