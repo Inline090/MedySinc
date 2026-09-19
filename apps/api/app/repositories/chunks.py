@@ -2,6 +2,7 @@ from uuid import UUID
 
 import asyncpg
 
+from app.core.config import settings
 from app.db.session import get_pool
 
 
@@ -58,3 +59,39 @@ async def find_chunks_for_document(document_id: UUID) -> list[asyncpg.Record]:
         """,
         document_id,
     )
+
+
+async def search_chunks(
+    *,
+    user_id: UUID,
+    embedding: list[float],
+    limit: int,
+) -> list[asyncpg.Record]:
+    pool = get_pool()
+    vector = _to_vector(embedding)
+
+    async with pool.acquire() as connection, connection.transaction():
+        await connection.execute(f"SET LOCAL hnsw.ef_search = {settings.HNSW_EF_SEARCH}")
+
+        return await connection.fetch(
+            """
+            SELECT
+                c.id,
+                c.document_id,
+                c.chunk_index,
+                c.content,
+                c.token_count,
+                d.title AS document_title,
+                d.document_type,
+                1 - (c.embedding <=> $1::vector) AS similarity
+            FROM document_chunks AS c
+            JOIN documents AS d ON d.id = c.document_id
+            WHERE c.user_id = $2
+              AND d.processing_status = 'processed'
+            ORDER BY c.embedding <=> $1::vector
+            LIMIT $3
+            """,
+            vector,
+            user_id,
+            limit,
+        )

@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     MODEL_CACHE_DIR: str | None = None
     AI_API_KEY: str | None = None
     LLM_MODEL: str = "gemini-2.5-flash"
+    HNSW_EF_SEARCH: int = 100
     JWT_SECRET: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 14
