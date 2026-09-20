@@ -18,8 +18,9 @@ later.
 
 ### Frontend
 
+- Next.js 16 (App Router)
 - React 19
-- Vite
+- Tailwind CSS 4
 
 ### Backend
 
@@ -34,7 +35,7 @@ later.
 ```txt
 medsync/
   apps/
-    frontend/            React client
+    frontend/            Next.js client
     api/                 FastAPI service
       app/
         controllers/
