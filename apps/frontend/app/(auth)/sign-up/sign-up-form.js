@@ -7,6 +7,8 @@ import { useState } from "react";
 import { api } from "@/lib/api";
 import { useSession } from "@/lib/session";
 
+import { GoogleButton } from "../google-button";
+
 export function SignUpForm() {
   const router = useRouter();
   const { refresh } = useSession();
@@ -95,6 +97,14 @@ export function SignUpForm() {
       >
         {pending ? "Creating account..." : "Create account"}
       </button>
+
+      <div className="mt-6 flex items-center gap-3">
+        <span className="h-px flex-1 bg-neutral-200" />
+        <span className="text-xs text-neutral-400">or</span>
+        <span className="h-px flex-1 bg-neutral-200" />
+      </div>
+
+      <GoogleButton />
 
       <p className="mt-4 text-center text-sm text-neutral-500">
         Already registered?{" "}

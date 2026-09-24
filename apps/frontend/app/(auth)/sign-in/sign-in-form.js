@@ -6,13 +6,15 @@ import { useState } from "react";
 
 import { useSession } from "@/lib/session";
 
-export function SignInForm() {
+import { GoogleButton } from "../google-button";
+
+export function SignInForm({ initialError = null }) {
   const router = useRouter();
   const { signIn } = useSession();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(initialError);
   const [pending, setPending] = useState(false);
 
   async function onSubmit(event) {
@@ -77,6 +79,14 @@ export function SignInForm() {
       >
         {pending ? "Signing in..." : "Sign in"}
       </button>
+
+      <div className="mt-6 flex items-center gap-3">
+        <span className="h-px flex-1 bg-neutral-200" />
+        <span className="text-xs text-neutral-400">or</span>
+        <span className="h-px flex-1 bg-neutral-200" />
+      </div>
+
+      <GoogleButton />
 
       <p className="mt-4 text-center text-sm text-neutral-500">
         No account?{" "}
