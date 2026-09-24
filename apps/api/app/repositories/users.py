@@ -23,6 +23,19 @@ async def create_user(
     )
 
 
+async def create_oauth_user(email: str, full_name: str | None = None) -> asyncpg.Record:
+    pool = get_pool()
+    return await pool.fetchrow(
+        """
+        INSERT INTO users (email, full_name)
+        VALUES ($1, $2)
+        RETURNING id, email, full_name, created_at, updated_at
+        """,
+        email,
+        full_name,
+    )
+
+
 async def find_user_by_email(email: str) -> asyncpg.Record | None:
     pool = get_pool()
     return await pool.fetchrow(

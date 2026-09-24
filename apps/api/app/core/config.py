@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     CORS_ORIGIN: str = "http://localhost:3000"
     STORAGE_ROOT: str = "storage"
+    STORAGE_BACKEND: str = "local"
+    S3_BUCKET: str | None = None
+    S3_REGION: str = "ap-south-1"
+    S3_ENDPOINT: str | None = None
     MAX_UPLOAD_BYTES: int = 10 * 1024 * 1024
     EMBEDDING_MODEL: str = "BAAI/bge-m3"
     EMBEDDING_DIMENSION: int = 1024
@@ -21,6 +25,10 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "gemini-2.5-flash"
     HNSW_EF_SEARCH: int = 100
     MIN_SIMILARITY: float = 0.45
+    FRONTEND_URL: str = "http://localhost:3000"
+    GOOGLE_CLIENT_ID: str | None = None
+    GOOGLE_CLIENT_SECRET: str | None = None
+    GOOGLE_REDIRECT_URL: str = "http://localhost:8000/api/v1/auth/google/callback"
     JWT_SECRET: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 14
