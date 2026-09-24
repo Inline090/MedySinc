@@ -1,24 +1,39 @@
 "use client";
 
+import Link from "next/link";
+import type { ChangeEvent, FormEvent } from "react";
 import { useCallback, useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
+import type { DocumentSummary } from "@/lib/types";
 
-const DOCUMENT_TYPES = ["lab_report", "prescription", "discharge_summary", "imaging", "other"];
+const DOCUMENT_TYPES = [
+  "lab_report",
+  "prescription",
+  "discharge_summary",
+  "imaging",
+  "other",
+] as const;
 
-function formatDate(value) {
+type LoadStatus = "loading" | "ready" | "error";
+
+function formatDate(value: string): string {
   return new Date(value).toLocaleDateString();
 }
 
-export function UploadForm({ onUploaded }) {
-  const [file, setFile] = useState(null);
+interface UploadFormProps {
+  onUploaded: () => void;
+}
+
+export function UploadForm({ onUploaded }: UploadFormProps) {
+  const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
-  const [documentType, setDocumentType] = useState("other");
+  const [documentType, setDocumentType] = useState<string>("other");
   const [tags, setTags] = useState("");
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  async function onSubmit(event) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
 
@@ -42,10 +57,10 @@ export function UploadForm({ onUploaded }) {
       setFile(null);
       setTitle("");
       setTags("");
-      event.target.reset();
+      event.currentTarget.reset();
       onUploaded();
     } catch (failure) {
-      setError(failure.message);
+      setError(failure instanceof Error ? failure.message : "Upload failed.");
     } finally {
       setPending(false);
     }
@@ -61,7 +76,9 @@ export function UploadForm({ onUploaded }) {
           <input
             type="file"
             accept="application/pdf"
-            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+            onChange={(event: ChangeEvent<HTMLInputElement>) =>
+              setFile(event.target.files?.[0] ?? null)
+            }
             className="mt-1 w-full text-sm"
           />
         </label>
@@ -122,9 +139,9 @@ export function UploadForm({ onUploaded }) {
 }
 
 export function DocumentList() {
-  const [documents, setDocuments] = useState([]);
-  const [status, setStatus] = useState("loading");
-  const [error, setError] = useState(null);
+  const [documents, setDocuments] = useState<DocumentSummary[]>([]);
+  const [status, setStatus] = useState<LoadStatus>("loading");
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -132,7 +149,7 @@ export function DocumentList() {
       setDocuments(payload.documents);
       setStatus("ready");
     } catch (failure) {
-      setError(failure.message);
+      setError(failure instanceof Error ? failure.message : "Could not load documents.");
       setStatus("error");
     }
   }, []);
@@ -151,7 +168,7 @@ export function DocumentList() {
       } catch (failure) {
         if (cancelled) return;
 
-        setError(failure.message);
+        setError(failure instanceof Error ? failure.message : "Could not load documents.");
         setStatus("error");
       }
     }
@@ -163,7 +180,7 @@ export function DocumentList() {
     };
   }, []);
 
-  async function remove(id) {
+  async function remove(id: string) {
     await api.deleteDocument(id);
     await load();
   }
@@ -198,12 +215,12 @@ export function DocumentList() {
           {documents.map((document) => (
             <li key={document.id} className="flex items-center justify-between gap-4 px-4 py-3">
               <div className="min-w-0">
-                <a
+                <Link
                   href={`/documents/${document.id}`}
                   className="block truncate text-sm font-medium underline"
                 >
                   {document.title}
-                </a>
+                </Link>
                 <p className="mt-0.5 text-xs text-neutral-500">
                   {document.document_type.replace(/_/g, " ")} · {formatDate(document.created_at)} ·{" "}
                   {document.processing_status}

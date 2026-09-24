@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import { useEffect } from "react";
 
 import { useSession } from "@/lib/session";
 
-export default function AppLayout({ children }) {
+export default function AppLayout({ children }: { children: ReactNode }) {
   const { status, user, signOut } = useSession();
   const router = useRouter();
 

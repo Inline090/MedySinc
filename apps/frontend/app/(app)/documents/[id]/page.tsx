@@ -5,12 +5,13 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { api } from "@/lib/api";
+import type { DocumentDetail } from "@/lib/types";
 
 export default function DocumentDetailPage() {
-  const { id } = useParams();
-  const [document, setDocument] = useState(null);
-  const [summary, setSummary] = useState(null);
-  const [error, setError] = useState(null);
+  const { id } = useParams<{ id: string }>();
+  const [document, setDocument] = useState<DocumentDetail | null>(null);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -26,7 +27,7 @@ export default function DocumentDetailPage() {
       } catch (failure) {
         if (cancelled) return;
 
-        setError(failure.message);
+        setError(failure instanceof Error ? failure.message : "Could not load the document.");
       }
     }
 
@@ -45,7 +46,7 @@ export default function DocumentDetailPage() {
       const payload = await api.summarizeDocument(id);
       setSummary(payload.summary);
     } catch (failure) {
-      setError(failure.message);
+      setError(failure instanceof Error ? failure.message : "Summarising failed.");
     } finally {
       setPending(false);
     }
@@ -58,6 +59,8 @@ export default function DocumentDetailPage() {
   if (document === null) {
     return <p className="text-sm text-neutral-500">Loading...</p>;
   }
+
+  const summaryText = summary ?? document.summary;
 
   return (
     <div>
@@ -94,12 +97,10 @@ export default function DocumentDetailPage() {
         </p>
       ) : null}
 
-      {summary ?? document.summary ? (
+      {summaryText ? (
         <section className="mt-6 rounded-lg border border-neutral-200 bg-white p-6">
           <h2 className="text-sm font-semibold">Summary</h2>
-          <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-700">
-            {summary ?? document.summary}
-          </p>
+          <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-700">{summaryText}</p>
         </section>
       ) : null}
 

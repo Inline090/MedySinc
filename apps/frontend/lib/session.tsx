@@ -1,14 +1,27 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 import { api } from "./api";
+import type { Credentials } from "./api";
+import type { User } from "./types";
 
-const SessionContext = createContext(null);
+export type SessionStatus = "loading" | "authenticated" | "anonymous";
 
-export function SessionProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [status, setStatus] = useState("loading");
+interface SessionValue {
+  user: User | null;
+  status: SessionStatus;
+  refresh: () => Promise<void>;
+  signIn: (credentials: Credentials) => Promise<User>;
+  signOut: () => Promise<void>;
+}
+
+const SessionContext = createContext<SessionValue | null>(null);
+
+export function SessionProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [status, setStatus] = useState<SessionStatus>("loading");
 
   const refresh = useCallback(async () => {
     try {
@@ -47,7 +60,7 @@ export function SessionProvider({ children }) {
     };
   }, []);
 
-  const value = useMemo(
+  const value = useMemo<SessionValue>(
     () => ({
       user,
       status,
@@ -70,7 +83,7 @@ export function SessionProvider({ children }) {
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 
-export function useSession() {
+export function useSession(): SessionValue {
   const context = useContext(SessionContext);
 
   if (context === null) {
