@@ -4,6 +4,7 @@ import asyncpg
 from fastapi import APIRouter, Depends
 
 from app.ai.answers import answer_question
+from app.core.rate_limit import rate_limit
 from app.middlewares.auth import get_current_user
 from app.schemas.qa import AskRequest
 
@@ -17,4 +18,4 @@ async def ask(
     return await answer_question(user_id=user["id"], question=payload.question)
 
 
-router.post("")(ask)
+router.post("", dependencies=[Depends(rate_limit("qa:ask", 20))])(ask)

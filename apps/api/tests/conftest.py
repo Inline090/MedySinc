@@ -45,7 +45,7 @@ async def client() -> AsyncClient:
     await connect()
 
     try:
-        await get_pool().execute("TRUNCATE users CASCADE")
+        await get_pool().execute("TRUNCATE users, rate_limits CASCADE")
 
         transport = ASGITransport(app=app)
 
