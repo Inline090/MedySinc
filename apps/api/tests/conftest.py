@@ -1,5 +1,6 @@
 import asyncio
 import os
+from collections.abc import AsyncIterator
 
 import asyncpg
 import pytest
@@ -38,7 +39,7 @@ def prepared_database() -> None:
 
 
 @pytest_asyncio.fixture
-async def client() -> AsyncClient:
+async def client() -> AsyncIterator[AsyncClient]:
     from app.db.session import connect, disconnect, get_pool
     from app.main import app
 

@@ -1,3 +1,4 @@
+from typing import TypedDict, cast
 from uuid import UUID
 
 from app.ai.embeddings import get_embeddings
@@ -6,6 +7,18 @@ from app.repositories.chunks import search_chunks_by_text, search_chunks_by_vect
 RECALL_SIZE = 20
 DEFAULT_RESULTS = 6
 RRF_K = 60
+
+
+class RetrievedChunk(TypedDict):
+    id: UUID
+    document_id: UUID
+    chunk_index: int
+    content: str
+    token_count: int
+    document_title: str
+    document_type: str
+    similarity: float
+    score: float
 
 
 def reciprocal_rank_fusion(rankings: list[list[UUID]], k: int = RRF_K) -> list[tuple[UUID, float]]:
@@ -24,7 +37,7 @@ async def find_relevant_chunks(
     query: str,
     limit: int = DEFAULT_RESULTS,
     recall: int = RECALL_SIZE,
-) -> list[dict[str, object]]:
+) -> list[RetrievedChunk]:
     embedding = (await get_embeddings().embed([query]))[0]
 
     vector_rows = await search_chunks_by_vector(
@@ -48,11 +61,11 @@ async def find_relevant_chunks(
         ]
     )
 
-    results: list[dict[str, object]] = []
+    results: list[RetrievedChunk] = []
 
     for chunk_id, score in fused[:limit]:
         candidate = candidates[chunk_id]
         candidate["score"] = score
-        results.append(candidate)
+        results.append(cast(RetrievedChunk, candidate))
 
     return results

@@ -35,6 +35,7 @@ torch = { index = "pytorch-cpu" }
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
+    "mypy>=2.3.1",
     "pre-commit>=4.6.2",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
@@ -52,3 +53,24 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.mypy]
+files = ["app"]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+# asyncpg, boto3 and PyMuPDF ship no type stubs, so their calls and returns are Any.
+disallow_untyped_calls = false
+warn_return_any = false
+
+[[tool.mypy.overrides]]
+module = [
+    "asyncpg.*",
+    "boto3.*",
+    "botocore.*",
+    "filetype.*",
+    "pymupdf.*",
+    "sentence_transformers.*",
+    "google.*",
+]
+ignore_missing_imports = true

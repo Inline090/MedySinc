@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from app.ai.llm import get_llm
-from app.ai.retrieval import find_relevant_chunks
+from app.ai.retrieval import RetrievedChunk, find_relevant_chunks
 from app.core.config import settings
 
 REFUSAL = "No relevant information found in your documents."
@@ -16,7 +16,7 @@ QA_SYSTEM_INSTRUCTION = (
 )
 
 
-def build_context(chunks: list[dict[str, object]]) -> str:
+def build_context(chunks: list[RetrievedChunk]) -> str:
     blocks = [
         f"[Source {position}: {chunk['document_title']}]\n{chunk['content']}"
         for position, chunk in enumerate(chunks, start=1)
@@ -25,7 +25,7 @@ def build_context(chunks: list[dict[str, object]]) -> str:
     return "\n\n---\n\n".join(blocks)
 
 
-def build_sources(chunks: list[dict[str, object]]) -> list[dict[str, object]]:
+def build_sources(chunks: list[RetrievedChunk]) -> list[dict[str, object]]:
     return [
         {
             "document_id": chunk["document_id"],

@@ -1,3 +1,5 @@
+from typing import Any
+
 import anyio
 import boto3
 from botocore.config import Config
@@ -14,7 +16,7 @@ class S3Storage(Storage):
         self._endpoint_url = endpoint_url
         self._client = None
 
-    def _connection(self):
+    def _connection(self) -> Any:
         if self._client is None:
             self._client = boto3.client(
                 "s3",
