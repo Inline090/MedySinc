@@ -73,8 +73,12 @@ async def upload_document(
     tags: Annotated[str | None, Form()] = None,
     notes: Annotated[str | None, Form()] = None,
 ) -> dict[str, object]:
-    data = await file.read()
     limit_mb = settings.MAX_UPLOAD_BYTES // (1024 * 1024)
+
+    if file.size is not None and file.size > settings.MAX_UPLOAD_BYTES:
+        raise AppError(f"File is larger than the {limit_mb} MB limit", 413)
+
+    data = await file.read()
 
     if len(data) > settings.MAX_UPLOAD_BYTES:
         raise AppError(f"File is larger than the {limit_mb} MB limit", 413)
