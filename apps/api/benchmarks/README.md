@@ -84,6 +84,45 @@ vendor's own blog post claiming it wins — no model card, no independent benchm
 `PubMedBERT` on its own is not a retrieval model; you need a specific
 sentence-transformers checkpoint, which is why one is named above.
 
+## Measured results — sample corpus, 5 chunks, 11 answerable questions
+
+Run on 2026-09-25, CPU only, against the sample corpus in `corpus/`. **These numbers
+cannot choose a model** — see the limits below. They are recorded because they are real
+measurements, and because two of the findings hold regardless of corpus size.
+
+| | bge-m3 | MedEmbed-large-v0.1 | S-PubMedBert-MS-MARCO |
+|---|---|---|---|
+| Dimensions | **1024** | **1024** | 768 |
+| On disk | 4352.9 MB | 1279.8 MB | 738.3 MB |
+| Model load | 11.5 s | 9.6 s | 29.3 s |
+| Query median | **187 ms** | 857 ms | 205 ms |
+| Query p95 | 245 ms | 1022 ms | 271 ms |
+| MRR@10 | **0.909** | 0.659 | 0.780 |
+| Questions answered at rank 1 | **9 / 11** | 4 / 11 | — |
+| Abstention accuracy | **0.333** | 0.000 | 0.000 |
+| Highest similarity on an unanswerable question | **0.521** | 0.637 | 0.869 |
+
+**MedEmbed has the same 1024 dimensions**, so swapping to it needs no migration — only a
+re-embed of every document. That part of the hypothesis checks out.
+
+**But it scores worse on every ranking metric and is 4.6× slower per query.** On the two
+synonym questions it split: better on `nsaids` (rank 2 → 1), worse on `acetaminophen`
+(rank 2 → 4). Five of eleven questions moved from rank 1 to rank 2.
+
+**The pattern suggests why.** MedEmbed's similarities run higher and closer together —
+its highest score on an unanswerable question was 0.637 against bge-m3's 0.521. Compressed
+scores make ranking less decisive, and they break the 0.45 gate, which is why abstention
+went to zero.
+
+**The query prefix was not the cause.** Running MedEmbed with and without the BGE query
+instruction produced identical ranks and identical MRR. The instruction only added latency
+(497 ms versus 269 ms), so it was removed from the comparison.
+
+**The finding that matters most: the 0.45 threshold is model-specific.** S-PubMedBert scored
+an unanswerable question at **0.869**. For that model, 0.45 is meaningless — the whole
+similarity scale sits somewhere else. **Any model swap requires re-tuning the threshold**,
+and that is a stronger argument for keeping the current model than any single score is.
+
 ## Limits — read before quoting a number
 
 **The sample corpus is scaffolding.** It exists to prove the harness runs end to end.

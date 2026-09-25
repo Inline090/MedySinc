@@ -17,7 +17,7 @@ import os
 import statistics
 import sys
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import numpy as np
@@ -43,14 +43,11 @@ class Candidate:
 
 
 # The query prefix is per model on purpose. Getting it wrong makes the comparison
-# unfair, so check each model card before trusting these numbers.
+# unfair. Measured: adding the BGE query instruction to MedEmbed changed no rank and
+# only added latency, so it is left off here.
 CANDIDATES: tuple[Candidate, ...] = (
     Candidate("bge-m3", "BAAI/bge-m3"),
-    Candidate(
-        "medembed-large",
-        "abhinand/MedEmbed-large-v0.1",
-        query_prefix="Represent this sentence for searching relevant passages: ",
-    ),
+    Candidate("medembed-large", "abhinand/MedEmbed-large-v0.1"),
     Candidate("pubmedbert-msmarco", "pritamdeka/S-PubMedBert-MS-MARCO"),
 )
 
@@ -157,7 +154,7 @@ def evaluate(
     chunks: list[dict[str, object]],
     questions: list[dict[str, object]],
     reranker: CrossEncoder | None,
-) -> dict[str, object]:
+) -> tuple[dict[str, object], list[dict[str, object]]]:
     started = time.perf_counter()
     model = SentenceTransformer(candidate.repo, cache_folder=str(CACHE_DIR))
     model_load_seconds = time.perf_counter() - started
@@ -181,6 +178,7 @@ def evaluate(
     reranked: list[tuple[list[int], list[str]]] = []
     query_seconds: list[float] = []
     abstained: list[float] = []
+    details: list[dict[str, object]] = []
 
     for row in questions:
         text = f"{candidate.query_prefix}{row['question']}"
@@ -194,9 +192,32 @@ def evaluate(
         markers = list(row.get("expect") or [])
 
         if not row.get("answerable"):
-            abstained.append(float(scores[order[0]]) if order else 0.0)
+            best = float(scores[order[0]]) if order else 0.0
+            abstained.append(best)
+            details.append(
+                {
+                    "question": str(row["question"]),
+                    "answerable": False,
+                    "similarity": round(best, 4),
+                }
+            )
             continue
+
         rankings.append((order, markers))
+        details.append(
+            {
+                "question": str(row["question"]),
+                "answerable": True,
+                "rank": next(
+                    (
+                        position
+                        for position, index in enumerate(order, start=1)
+                        if is_relevant(chunks[index], markers)
+                    ),
+                    None,
+                ),
+            }
+        )
 
         if reranker is not None:
             pairs = [(str(row["question"]), str(chunks[index]["content"])) for index in order]
@@ -235,7 +256,7 @@ def evaluate(
         result["abstention_accuracy"] = round(1 - len(leaked) / len(abstained), 4)
         result["highest_unanswerable_similarity"] = round(max(abstained), 4)
 
-    return result
+    return result, details
 
 
 def main() -> None:
@@ -244,6 +265,8 @@ def main() -> None:
     parser.add_argument("--questions", type=Path, default=HERE / "questions.jsonl")
     parser.add_argument("--only", default=None, help="run a single candidate by name")
     parser.add_argument("--rerank", action="store_true", help="also score Recall@5 after reranking")
+    parser.add_argument("--details", action="store_true", help="print the rank each question got")
+    parser.add_argument("--no-prefix", action="store_true", help="ignore each model's query prefix")
     parser.add_argument("--out", type=Path, default=HERE / "results" / "latest.json")
     args = parser.parse_args()
 
@@ -287,12 +310,34 @@ def main() -> None:
             continue
 
         print(f"running {candidate.name} ({candidate.repo}) ...")
-        result = evaluate(candidate, chunks, questions, reranker)
+
+        active = replace(candidate, query_prefix="") if args.no_prefix else candidate
+
+        try:
+            result, details = evaluate(active, chunks, questions, reranker)
+        except Exception as error:
+            print(f"  FAILED: {type(error).__name__}: {error}")
+            print()
+            continue
+
         results.append(result)
 
         for key, value in result.items():
             if key not in {"model", "repo"}:
                 print(f"  {key:34} {value}")
+
+        if args.details:
+            print("  per question:")
+
+            for item in details:
+                if item["answerable"]:
+                    rank = item["rank"]
+                    shown = "not found" if rank is None else f"rank {rank}"
+                else:
+                    shown = f"sim {item['similarity']}"
+
+                print(f"    {shown:>10}  {item['question']}")
+
         print()
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
