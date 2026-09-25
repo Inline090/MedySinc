@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "gemini-2.5-flash"
     HNSW_EF_SEARCH: int = 100
     MIN_SIMILARITY: float = 0.45
+    ANSWER_CACHE_ENABLED: bool = True
+    ANSWER_CACHE_TTL_HOURS: int = 24
     RERANK_ENABLED: bool = True
     RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     RERANK_CANDIDATES: int = 20

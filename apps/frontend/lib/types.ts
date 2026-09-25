@@ -48,6 +48,7 @@ export interface Answer {
   answer: string;
   sources: AnswerSource[];
   model: string | null;
+  cached: boolean;
 }
 
 export interface UserResponse {

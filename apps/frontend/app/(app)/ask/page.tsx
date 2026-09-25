@@ -82,6 +82,7 @@ export default function AskPage() {
             <p className="mt-3 text-xs text-neutral-500">
               {result.sources.length} source{result.sources.length === 1 ? "" : "s"} cited
               {result.model ? ` · ${result.model}` : ""}
+              {result.cached ? " · served from cache" : ""}
             </p>
           </section>
 

@@ -11,6 +11,7 @@ from app.ai.summaries import generate_document_summary
 from app.core.config import settings
 from app.core.exceptions import AppError
 from app.middlewares.auth import get_current_user
+from app.repositories.answers import clear_answers_for_user
 from app.repositories.documents import (
     count_documents,
     create_document,
@@ -106,6 +107,7 @@ async def upload_document(
     )
 
     background.add_task(ingest_document, document["id"])
+    await clear_answers_for_user(user["id"])
 
     return {"document": document_detail(document)}
 
@@ -168,6 +170,7 @@ async def delete_user_document(
         raise AppError("Document not found", 404)
 
     await get_storage().delete(storage_key)
+    await clear_answers_for_user(user["id"])
 
     return {"message": "Document deleted"}
 
