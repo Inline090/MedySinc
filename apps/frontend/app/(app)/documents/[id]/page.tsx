@@ -99,7 +99,10 @@ export default function DocumentDetailPage() {
 
       {summaryText ? (
         <section className="mt-6 rounded-lg border border-neutral-200 bg-white p-6">
-          <h2 className="text-sm font-semibold">Summary</h2>
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            <AttachmentIcon />
+            Summary
+          </h2>
           <p className="mt-2 whitespace-pre-wrap text-sm text-neutral-700">{summaryText}</p>
         </section>
       ) : null}
@@ -113,5 +116,22 @@ export default function DocumentDetailPage() {
         </section>
       ) : null}
     </div>
+  );
+}
+
+function AttachmentIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-4 shrink-0 text-neutral-400"
+    >
+      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+    </svg>
   );
 }
