@@ -1,0 +1,52 @@
+OBSERVATION: SAMPLE DATA. Synthetic, written for benchmark scaffolding only.
+Replace with real de-identified documents before quoting any numbers.
+
+GENERAL HOSPITAL - DISCHARGE SUMMARY
+Patient: Sample Patient A          Age / Sex: 34 / F
+Admission: 2026-06-11              Discharge: 2026-06-15
+Ward: General Medicine, Bed 14     Consultant: Dr Sample Physician
+
+REASON FOR ADMISSION
+Presented to the emergency department with a four day history of high grade fever,
+severe generalised weakness and reduced oral intake. Reported one episode of
+vomiting on the day of presentation. No bleeding gums, no rash, no abdominal pain.
+
+HISTORY
+Known type 2 diabetes mellitus on metformin since April 2026.
+Subclinical hypothyroidism on thyroxine 25 micrograms since May 2026.
+No previous hospital admissions. No known allergies.
+
+INVESTIGATIONS ON ADMISSION
+
+Haemoglobin                 10.9 g/dL
+Total leucocyte count       5200 cells/uL
+Platelet count              98000 cells/uL, falling to 74000 cells/uL on day two
+Dengue NS1 antigen          POSITIVE
+Dengue IgM                  NEGATIVE
+Malaria antigen             NEGATIVE
+Widal test                  NEGATIVE
+Chest radiograph            No focal consolidation
+Ultrasound abdomen          Mild ascites, no organomegaly
+
+COURSE IN HOSPITAL
+Dengue fever with thrombocytopenia was diagnosed. Intravenous fluids were given
+cautiously in view of the falling platelet count. Fever settled by day four with
+paracetamol as required, total daily dose not exceeding two grams. Platelet count
+was monitored twice daily and showed a rising trend from day four. No bleeding
+manifestations at any point. Metformin was withheld during admission because of
+reduced oral intake and restarted on the day of discharge.
+
+MEDICATIONS AT DISCHARGE
+Tab Metformin 500 mg, one tablet twice daily after meals. Restarted on discharge.
+Tab Paracetamol 500 mg, one tablet up to three times a day if fever recurs,
+not exceeding two grams in twenty four hours.
+Tab Thyronorm 25 mcg, one tablet on an empty stomach in the morning.
+
+ADVICE
+Avoid non steroidal anti inflammatory drugs for the next two weeks.
+Maintain oral hydration. Daily platelet count for three days after discharge.
+Return immediately if there is gum bleeding, blood in stool, black stools,
+persistent vomiting or a fever above 102 F.
+
+FOLLOW UP
+Review in the medicine outpatient department on 2026-06-22 with a repeat blood count.

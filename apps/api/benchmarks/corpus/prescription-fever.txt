@@ -1,0 +1,34 @@
+OBSERVATION: SAMPLE DATA. Synthetic, written for benchmark scaffolding only.
+Replace with real de-identified documents before quoting any numbers.
+
+CITY CARE CLINIC - OUTPATIENT PRESCRIPTION
+Patient: Sample Patient A          Age / Sex: 34 / F
+Date: 2026-03-14                   OPD No: CC-10231
+
+Complaints
+Fever with chills for three days, generalised body ache, no cough, no breathlessness.
+No history of travel in the past month. No known drug allergy.
+
+Examination
+Temperature 101.4 F, pulse 96 per minute, BP 118/76 mmHg, SpO2 98 percent on room air.
+Chest clear on auscultation. No lymphadenopathy. Abdomen soft, non-tender.
+
+Assessment
+Acute febrile illness, likely viral. Dengue and malaria screening advised.
+
+Advice
+Complete blood count with peripheral smear.
+Dengue NS1 antigen and IgM.
+Malaria antigen test.
+
+Prescription
+Tab Dolo 650 mg, one tablet twice daily after food for five days.
+Tab Cetirizine 10 mg, one tablet at bedtime for five days.
+Cap Pantoprazole 40 mg, one capsule before breakfast for five days.
+
+Plenty of oral fluids. Tepid sponging for fever above 102 F.
+Review after three days or earlier if fever persists beyond 48 hours.
+
+Follow up on 2026-03-17.
+Dr Sample Physician, MBBS, MD
+Reg No 000000

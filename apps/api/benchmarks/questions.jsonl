@@ -1,0 +1,28 @@
+# Labelled questions. One JSON object per line. Lines starting with # are ignored.
+#
+# "expect" is a list of text markers. A retrieved chunk counts as relevant if it
+# contains ANY of them (case-insensitive). Markers are used instead of chunk ids
+# on purpose, so the labels survive a change to chunk size.
+#
+# "answerable": false means the correct behaviour is to return nothing. Those rows
+# are excluded from recall and measured as abstention instead.
+#
+# These are SAMPLE questions written against the sample corpus. Replace both.
+
+{"question": "what was my haemoglobin level", "answerable": true, "expect": ["11.2 g/dl"]}
+{"question": "what was my fasting plasma glucose", "answerable": true, "expect": ["148 mg/dl"]}
+{"question": "what was my hba1c", "answerable": true, "expect": ["7.4 percent"]}
+{"question": "what was my thyroid stimulating hormone level", "answerable": true, "expect": ["5.8 uiu/ml"]}
+{"question": "when was I told to come back after the fever", "answerable": true, "expect": ["2026-03-17"]}
+
+{"question": "what was my bp at the clinic", "answerable": true, "expect": ["118/76"]}
+{"question": "how many platelets did I have on day two", "answerable": true, "expect": ["74000"]}
+{"question": "what did they advise about nsaids", "answerable": true, "expect": ["non steroidal"]}
+
+{"question": "what dose of acetaminophen was I told to take at bedtime", "answerable": true, "expect": ["tylenol 500 mg"]}
+{"question": "when was metformin started", "answerable": true, "expect": ["2026-04-20"]}
+{"question": "was metformin stopped while I was in hospital", "answerable": true, "expect": ["withheld during admission"]}
+
+{"question": "what was my blood pressure in january", "answerable": false, "expect": []}
+{"question": "what antibiotic was I prescribed", "answerable": false, "expect": []}
+{"question": "what is my insurance policy number", "answerable": false, "expect": []}

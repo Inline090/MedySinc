@@ -1,0 +1,36 @@
+OBSERVATION: SAMPLE DATA. Synthetic, written for benchmark scaffolding only.
+Replace with real de-identified documents before quoting any numbers.
+
+CITY CARE CLINIC - FOLLOW UP PRESCRIPTION
+Patient: Sample Patient A          Age / Sex: 34 / F
+Date: 2026-05-02                   OPD No: CC-10231
+
+Diagnosis
+Type 2 diabetes mellitus, newly detected. Subclinical hypothyroidism under observation.
+
+Current medication
+Tab Metformin 500 mg, one tablet twice daily after meals. Started on 2026-04-20,
+dose to be reviewed after four weeks.
+Tab Tylenol 500 mg, one tablet at bedtime as needed for joint pain, not to exceed
+two grams per day.
+Tab Thyronorm 25 mcg, one tablet on an empty stomach in the morning, thirty minutes
+before food. Do not take with calcium or iron.
+
+Laboratory review from 2026-04-18
+HbA1c 7.4 percent, which is above target for a newly diagnosed patient.
+Fasting plasma glucose 148 mg/dL. Post prandial glucose 212 mg/dL.
+Serum creatinine 0.8 mg/dL. eGFR above 90.
+
+Plan
+Continue metformin at the current dose and repeat HbA1c after three months.
+Dietary counselling given. Target weight reduction of four kilograms over six months.
+Thirty minutes of brisk walking at least five days a week.
+Repeat thyroid stimulating hormone after eight weeks.
+
+Warning signs explained
+Hypoglycaemia symptoms, and what to do if they occur.
+When to stop the medication and contact the clinic.
+
+Follow up on 2026-08-01.
+Dr Sample Physician, MBBS, MD
+Reg No 000000

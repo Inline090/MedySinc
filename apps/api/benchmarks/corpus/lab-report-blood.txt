@@ -1,0 +1,46 @@
+OBSERVATION: SAMPLE DATA. Synthetic, written for benchmark scaffolding only.
+Replace with real de-identified documents before quoting any numbers.
+
+METRO DIAGNOSTICS - COMPLETE BLOOD COUNT AND METABOLIC PANEL
+Patient: Sample Patient A          Age / Sex: 34 / F
+Collected: 2026-04-18 08:15        Reported: 2026-04-18 17:40
+Sample type: EDTA whole blood and serum
+
+HAEMATOLOGY
+
+Haemoglobin                11.2 g/dL      Reference 12.0 to 15.0     LOW
+Total leucocyte count      8600 cells/uL  Reference 4000 to 11000   NORMAL
+Differential count
+  Neutrophils              62 percent
+  Lymphocytes              30 percent
+  Eosinophils              4 percent
+  Monocytes                3 percent
+  Basophils                1 percent
+Platelet count             245000 cells/uL  Reference 150000 to 410000  NORMAL
+Packed cell volume          34.6 percent     Reference 36 to 46          LOW
+Mean corpuscular volume    84 fL            Reference 80 to 100         NORMAL
+Erythrocyte sedimentation rate  22 mm/hr   Reference 0 to 20           SLIGHTLY HIGH
+
+BIOCHEMISTRY
+
+Fasting plasma glucose     148 mg/dL        Reference 70 to 100         HIGH
+Post prandial glucose      212 mg/dL        Reference below 140         HIGH
+HbA1c                      7.4 percent      Reference below 5.7         HIGH
+Serum creatinine           0.8 mg/dL        Reference 0.6 to 1.1        NORMAL
+eGFR                       above 90         Reference above 90          NORMAL
+Total cholesterol          198 mg/dL        Reference below 200         NORMAL
+Triglycerides              176 mg/dL        Reference below 150         HIGH
+HDL cholesterol            42 mg/dL         Reference above 50          LOW
+LDL cholesterol            121 mg/dL        Reference below 100         HIGH
+
+THYROID
+
+Thyroid stimulating hormone 5.8 uIU/mL      Reference 0.4 to 4.0        HIGH
+Free T4                    1.1 ng/dL        Reference 0.8 to 1.8        NORMAL
+
+INTERPRETATION
+Mild anaemia with a low packed cell volume. Glycaemic control above target.
+Borderline hypertriglyceridaemia with low HDL. Thyroid stimulating hormone mildly
+elevated with normal free T4, consistent with subclinical hypothyroidism.
+
+Suggested review of these results with the treating physician.
