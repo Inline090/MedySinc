@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ChangeEvent, FormEvent } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { api } from "@/lib/api";
 import type { DocumentSummary } from "@/lib/types";
@@ -26,6 +26,7 @@ interface UploadFormProps {
 }
 
 export function UploadForm({ onUploaded }: UploadFormProps) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [documentType, setDocumentType] = useState<string>("other");
@@ -57,7 +58,9 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
       setFile(null);
       setTitle("");
       setTags("");
-      event.currentTarget.reset();
+      // React clears event.currentTarget once the handler's sync part ends,
+      // so resetting after an await needs a ref.
+      formRef.current?.reset();
       onUploaded();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Upload failed.");
@@ -67,7 +70,11 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-lg border border-neutral-200 bg-white p-6">
+    <form
+      ref={formRef}
+      onSubmit={onSubmit}
+      className="rounded-lg border border-neutral-200 bg-white p-6"
+    >
       <h2 className="text-sm font-semibold">Upload a document</h2>
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
