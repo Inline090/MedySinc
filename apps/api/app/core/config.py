@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     S3_REGION: str = "ap-south-1"
     S3_ENDPOINT: str | None = None
     MAX_UPLOAD_BYTES: int = 10 * 1024 * 1024
+    OCR_ENABLED: bool = True
+    OCR_DPI: int = 200
+    OCR_MAX_PAGES: int = 10
+    TESSERACT_CMD: str | None = None
     EMBEDDING_MODEL: str = "BAAI/bge-m3"
     EMBEDDING_DIMENSION: int = 1024
     MODEL_CACHE_DIR: str | None = None

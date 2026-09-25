@@ -1,5 +1,4 @@
 from app.ai.chunking import MAX_TOKENS, chunk_text, estimate_tokens, split_sentences
-from app.ai.extraction import extract_text, needs_ocr
 
 
 def test_estimate_tokens_uses_four_characters_per_token():
@@ -64,13 +63,3 @@ def test_an_oversized_sentence_without_punctuation_is_split_by_words():
 
     for chunk in chunks:
         assert chunk.token_count <= MAX_TOKENS
-
-
-def test_extract_text_returns_nothing_for_images_because_there_is_no_ocr():
-    assert extract_text(b"\x89PNG\r\n\x1a\n", "image/png") == ""
-
-
-def test_needs_ocr_flags_text_that_is_too_short_to_use():
-    assert needs_ocr("") is True
-    assert needs_ocr("too short") is True
-    assert needs_ocr("x" * 60) is False

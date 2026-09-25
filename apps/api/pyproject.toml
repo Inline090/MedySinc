@@ -16,6 +16,7 @@ dependencies = [
     "pydantic[email]>=2.13.5",
     "pyjwt>=2.14.0",
     "pymupdf>=1.28.2",
+    "pytesseract>=0.3.13",
     "python-multipart>=0.0.32",
     "sentence-transformers>=6.1.0",
     "uvicorn[standard]>=0.32.0",
@@ -70,6 +71,7 @@ module = [
     "botocore.*",
     "filetype.*",
     "pymupdf.*",
+    "pytesseract.*",
     "sentence_transformers.*",
     "google.*",
 ]
