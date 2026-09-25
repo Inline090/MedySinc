@@ -1,14 +1,29 @@
 import io
+from functools import lru_cache
 
+import numpy as np
 import pymupdf
-import pytesseract
-from PIL import Image
-from pytesseract import TesseractNotFoundError
+from paddleocr import PaddleOCR
+from PIL import Image, UnidentifiedImageError
 
 from app.core.config import settings
 from app.core.exceptions import AppError
 
 MIN_TEXT_LENGTH = 50
+
+
+@lru_cache
+def _engine() -> PaddleOCR:
+    # enable_mkldnn=False works around a native crash in Paddle's oneDNN path:
+    # "ConvertPirAttribute2RuntimeAttribute not support [pir::ArrayAttribute<...>]".
+    # The orientation and unwarping stages are off so no extra models are downloaded.
+    return PaddleOCR(
+        lang=settings.OCR_LANGUAGE,
+        enable_mkldnn=False,
+        use_doc_orientation_classify=False,
+        use_doc_unwarping=False,
+        use_textline_orientation=False,
+    )
 
 
 def extract_text(data: bytes, mime_type: str) -> str:
@@ -27,21 +42,21 @@ def needs_ocr(text: str) -> bool:
     return len(text.strip()) < MIN_TEXT_LENGTH
 
 
-def _ocr(data: bytes) -> str:
-    if settings.TESSERACT_CMD:
-        pytesseract.pytesseract.tesseract_cmd = settings.TESSERACT_CMD
-
-    try:
-        return pytesseract.image_to_string(Image.open(io.BytesIO(data)))
-    except TesseractNotFoundError as error:
-        raise AppError("The OCR engine is not installed on the server", 503) from error
-
-
 def _ocr_image(data: bytes) -> str:
     if not settings.OCR_ENABLED:
         return ""
 
-    return _ocr(data)
+    try:
+        image = np.array(Image.open(io.BytesIO(data)).convert("RGB"))
+    except (UnidentifiedImageError, OSError) as error:
+        raise AppError("Could not read the uploaded image", 422) from error
+
+    lines: list[str] = []
+
+    for result in _engine().predict(image):
+        lines.extend(result.get("rec_texts") or [])
+
+    return "\n".join(lines)
 
 
 def _ocr_pdf(data: bytes) -> str:
@@ -58,7 +73,7 @@ def _ocr_pdf(data: bytes) -> str:
 
         pages = [page.get_pixmap(dpi=settings.OCR_DPI).tobytes("png") for page in document]
 
-    return "\n\n".join(_ocr(page) for page in pages)
+    return "\n\n".join(_ocr_image(page) for page in pages)
 
 
 def _extract_pdf_text(data: bytes) -> str:

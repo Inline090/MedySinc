@@ -1,6 +1,3 @@
-import shutil
-from pathlib import Path
-
 import pymupdf
 import pytest
 
@@ -9,19 +6,6 @@ from app.core.config import settings
 from app.core.exceptions import AppError
 
 LONG_TEXT = "Haemoglobin 13.5 g/dL and total leucocyte count 7500 cells per microlitre"
-
-
-def _tesseract_available() -> bool:
-    if settings.TESSERACT_CMD:
-        return Path(settings.TESSERACT_CMD).exists()
-
-    return shutil.which("tesseract") is not None
-
-
-requires_tesseract = pytest.mark.skipif(
-    not _tesseract_available(),
-    reason="the tesseract binary is not installed",
-)
 
 
 def _png_with_text(text: str) -> bytes:
@@ -84,19 +68,21 @@ def test_ocr_disabled_returns_no_text_from_an_image(monkeypatch):
     assert extract_text(_png_with_text("Paracetamol"), "image/png") == ""
 
 
-@requires_tesseract
 def test_ocr_reads_text_out_of_an_image():
     assert "paracetamol" in extract_text(_png_with_text("Paracetamol"), "image/png").lower()
 
 
-@requires_tesseract
 def test_ocr_reads_a_pdf_that_has_no_text_layer():
     assert "paracetamol" in extract_text(_scanned_pdf("Paracetamol"), "application/pdf").lower()
 
 
-@requires_tesseract
 def test_a_scanned_pdf_over_the_page_limit_is_rejected_before_ocr(monkeypatch):
     monkeypatch.setattr(settings, "OCR_MAX_PAGES", 1)
 
     with pytest.raises(AppError):
         extract_text(_scanned_pdf("Paracetamol", pages=2), "application/pdf")
+
+
+def test_an_unreadable_image_is_rejected_cleanly():
+    with pytest.raises(AppError):
+        extract_text(b"not an image at all", "image/png")
