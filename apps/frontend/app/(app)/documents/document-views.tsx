@@ -38,7 +38,7 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
     setError(null);
 
     if (file === null) {
-      setError("Choose a PDF to upload.");
+      setError("Choose a PDF or an image to upload.");
       return;
     }
 
@@ -75,7 +75,7 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
           <span className="font-medium">File</span>
           <input
             type="file"
-            accept="application/pdf"
+            accept="application/pdf,image/png,image/jpeg"
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
               setFile(event.target.files?.[0] ?? null)
             }

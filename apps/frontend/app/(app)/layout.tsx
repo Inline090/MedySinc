@@ -36,6 +36,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <Link href="/documents" className="text-sm text-neutral-600">
               Documents
             </Link>
+            <Link href="/ask" className="text-sm text-neutral-600">
+              Ask
+            </Link>
           </div>
 
           <div className="flex items-center gap-4 text-sm">
