@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "gemini-2.5-flash"
     HNSW_EF_SEARCH: int = 100
     MIN_SIMILARITY: float = 0.45
+    RERANK_ENABLED: bool = True
+    RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    RERANK_CANDIDATES: int = 20
     FRONTEND_URL: str = "http://localhost:3000"
     GOOGLE_CLIENT_ID: str | None = None
     GOOGLE_CLIENT_SECRET: str | None = None

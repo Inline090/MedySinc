@@ -40,24 +40,20 @@ def build_sources(chunks: list[RetrievedChunk]) -> list[dict[str, object]]:
 
 
 async def answer_question(*, user_id: UUID, question: str) -> dict[str, object]:
-    chunks = await find_relevant_chunks(user_id=user_id, query=question)
+    retrieval = await find_relevant_chunks(user_id=user_id, query=question)
 
-    best_similarity = max(
-        (float(chunk["similarity"]) for chunk in chunks),
-        default=0.0,
-    )
-
-    if best_similarity < settings.MIN_SIMILARITY:
+    if retrieval.best_similarity < settings.MIN_SIMILARITY:
         return {"answer": REFUSAL, "sources": [], "model": None}
 
     prompt = (
-        f"Excerpts from the patient's documents:\n\n{build_context(chunks)}\n\nQuestion: {question}"
+        f"Excerpts from the patient's documents:\n\n{build_context(retrieval.chunks)}\n\n"
+        f"Question: {question}"
     )
 
     answer = await get_llm().complete(QA_SYSTEM_INSTRUCTION, prompt)
 
     return {
         "answer": answer or REFUSAL,
-        "sources": build_sources(chunks),
+        "sources": build_sources(retrieval.chunks),
         "model": settings.LLM_MODEL,
     }
