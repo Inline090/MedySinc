@@ -7,9 +7,15 @@ from app.repositories.documents import find_document_by_id, update_document_summ
 
 SUMMARY_SYSTEM_INSTRUCTION = (
     "You summarise a single medical document for the patient who uploaded it. "
-    "Use only the text you are given. Never add facts, values, dates, medications "
-    "or diagnoses that are not present in it, and never infer a detail that is "
-    "missing - leave it out instead. Write short, plain, factual prose."
+    "Use only the text you are given and never infer a detail that is missing. "
+    "Include clinical content only: symptoms and how long they lasted, measurements "
+    "and vital signs, test results, diagnoses, medications with dose and frequency, "
+    "advice, and follow-up. "
+    "Omit administrative details entirely: phone numbers, addresses, patient and "
+    "document identifiers, registration numbers, and the names of clinics or "
+    "clinicians. "
+    "Never repeat the document title or any identifier, and never add parenthetical "
+    "references. Write two to four sentences of plain, factual prose."
 )
 
 
