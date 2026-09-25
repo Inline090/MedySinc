@@ -29,7 +29,32 @@ interface RequestOptions {
   form?: FormData;
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+const NO_REFRESH_PATHS = new Set([
+  "/api/v1/auth/login",
+  "/api/v1/auth/register",
+  "/api/v1/auth/refresh",
+  "/api/v1/auth/logout",
+]);
+
+let refreshing: Promise<boolean> | null = null;
+
+function refreshSession(): Promise<boolean> {
+  if (refreshing === null) {
+    refreshing = fetch(`${API_URL}/api/v1/auth/refresh`, {
+      method: "POST",
+      credentials: "include",
+    })
+      .then((response) => response.ok)
+      .catch(() => false)
+      .finally(() => {
+        refreshing = null;
+      });
+  }
+
+  return refreshing;
+}
+
+async function send(path: string, options: RequestOptions): Promise<Response> {
   const { method = "GET", body, form } = options;
   const headers: Record<string, string> = {};
 
@@ -37,12 +62,21 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     headers["Content-Type"] = "application/json";
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
+  return fetch(`${API_URL}${path}`, {
     method,
     headers,
     body: form ?? (body === undefined ? undefined : JSON.stringify(body)),
     credentials: "include",
   });
+}
+
+async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  let response = await send(path, options);
+
+  // The access token lasts 30 minutes. One silent refresh, then one retry.
+  if (response.status === 401 && !NO_REFRESH_PATHS.has(path) && (await refreshSession())) {
+    response = await send(path, options);
+  }
 
   const payload: unknown = await response.json().catch(() => null);
 
