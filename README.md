@@ -8,31 +8,30 @@ each answer cited back to the file it came from.
 
 ```mermaid
 flowchart TD
-    Browser["Browser<br/>React 19 client components"]
-    Web["Next.js on port 80<br/>App Router"]
-    API["FastAPI on port 8000<br/>auth middleware and rate limiter"]
-    Ingest["Ingestion, runs as a background task<br/>extract, chunk, embed"]
-    Ask["Question answering<br/>search, rerank, write the answer"]
-    DB[("PostgreSQL with pgvector<br/>documents, chunks, answer cache")]
-    Store["Object storage<br/>S3 or local disk"]
-    Model["Model API<br/>answers, summaries, medicines"]
+    Browser["Browser"]
+    Web["Next.js"]
+    API["FastAPI"]
+    Ingest["Ingestion"]
+    Ask["Question answering"]
+    DB[("PostgreSQL with pgvector")]
+    Store["Object storage"]
+    Model["Model API"]
 
     Browser -->|HTTPS| Web
-    Web -->|"fetch /api/* with cookies"| API
+    Web -->|"api requests"| API
     API -->|"upload returns first"| Ingest
     API -->|ask| Ask
     Ingest -.->|"the original file"| Store
     Ask -.->|"redacted excerpts"| Model
     Ingest -->|"text and vectors"| DB
-    Ask -->|"your own chunks"| DB
+    Ask -.->|"your own chunks"| DB
 ```
 
 Solid arrows are the request path. Dotted arrows are stored or external.
 
-One host runs both apps. The browser talks to Next.js on port 80, Next.js talks to
-the API on port 8000, and the API owns the database, the file storage and the model
-calls. Ingestion runs as a background task inside the API process rather than in a
-separate worker, so an upload returns before its document has finished being read.
+One host runs both apps. The API owns the database, the file storage and the model
+calls. Ingestion runs as a background task inside the API process, so an upload
+returns before its document has finished being read.
 
 ## Features
 
