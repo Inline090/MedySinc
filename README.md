@@ -9,8 +9,8 @@ each answer cited back to the file it came from.
 ```mermaid
 flowchart TD
     Browser["Browser"]
-    Web["Next.js"]
-    API["FastAPI"]
+    Web["Frontend"]
+    API["Backend"]
     Ingest["Ingestion"]
     Ask["Question answering"]
     DB[("PostgreSQL with pgvector")]
@@ -29,9 +29,9 @@ flowchart TD
 
 Solid arrows are the request path. Dotted arrows are stored or external.
 
-One host runs both apps. The API owns the database, the file storage and the model
-calls. Ingestion runs as a background task inside the API process, so an upload
-returns before its document has finished being read.
+One host runs both apps. The backend owns the database, the file storage and the
+model calls. Ingestion runs as a background task inside the backend process, so an
+upload returns before its document has finished being read.
 
 ## Features
 
