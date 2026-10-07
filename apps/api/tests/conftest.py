@@ -14,6 +14,7 @@ os.environ.setdefault("DATABASE_URL", TEST_DSN)
 
 
 async def _prepare_database() -> None:
+    """Drops and recreates the test database, then runs migrations."""
     admin = await asyncpg.connect(ADMIN_DSN)
 
     try:
@@ -35,11 +36,13 @@ async def _prepare_database() -> None:
 
 @pytest.fixture(scope="session", autouse=True)
 def prepared_database() -> None:
+    """Sets up the database once for the whole test session."""
     asyncio.run(_prepare_database())
 
 
 @pytest_asyncio.fixture
 async def client() -> AsyncIterator[AsyncClient]:
+    """Provides an HTTP client for testing and clears the database before each test."""
     from app.db.session import connect, disconnect, get_pool
     from app.main import app
 

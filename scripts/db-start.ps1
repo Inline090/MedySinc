@@ -1,3 +1,6 @@
+# Starts a PostgreSQL container with pgvector using Docker.
+# If the container already exists, it restarts it. If not, it creates a new one.
+# Waits for the database to be ready to accept connections before finishing.
 $ErrorActionPreference = "Stop"
 
 $Name = "medsync-postgres"

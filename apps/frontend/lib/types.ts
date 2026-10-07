@@ -1,10 +1,3 @@
-export type DocumentType =
-  | "lab_report"
-  | "prescription"
-  | "discharge_summary"
-  | "imaging"
-  | "other";
-
 export type ProcessingStatus = "pending" | "processing" | "processed" | "failed";
 
 export interface User {
@@ -18,8 +11,6 @@ export interface User {
 export interface DocumentSummary {
   id: string;
   title: string;
-  document_type: DocumentType;
-  tags: string[];
   notes: string | null;
   original_name: string;
   mime_type: string;
@@ -38,17 +29,39 @@ export interface DocumentDetail extends DocumentSummary {
 export interface AnswerSource {
   document_id: string;
   document_title: string;
-  document_type: DocumentType;
   chunk_index: number;
   similarity: number;
   excerpt: string;
 }
 
+export type AnswerStatus = "answered" | "uncertain" | "not_found";
+
 export interface Answer {
+  status: AnswerStatus;
   answer: string;
   sources: AnswerSource[];
   model: string | null;
+  confidence: "Low" | "High" | null;
   cached: boolean;
+}
+
+export interface Medicine {
+  id: string;
+  document_id: string;
+  document_title: string;
+  hospital: string | null;
+  medicine: string;
+  dose: string | null;
+  frequency: string | null;
+  prescribed_on: string | null;
+  notes: string | null;
+}
+
+export interface MedicineListResponse {
+  medicines: Medicine[];
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 export interface UserResponse {

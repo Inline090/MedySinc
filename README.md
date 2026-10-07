@@ -1,36 +1,46 @@
 # MedSync
 
-MedSync is a personal medical document storage app. Upload medical documents,
-keep them organised in one place, and use AI to make them easier to understand
-later.
+MedSync is a personal medical document assistant. Upload prescriptions, lab
+reports and scans, then ask questions answered only from your own documents, with
+each answer cited back to the file it came from.
+
+## Architecture
+
+![MedSync architecture](docs/architecture.svg)
+
+One host runs both apps. The browser talks to Next.js on port 80, Next.js talks to
+the API on port 8000, and the API owns the database, the file storage and the model
+calls. Ingestion runs as a background task inside the API process rather than in a
+separate worker, so an upload returns before its document has finished being read.
 
 ## Features
 
-- User registration and login
-- Upload medical documents such as reports, prescriptions, bills, and summaries
-- Store document details including title, type, tags, and notes
-- View, search, and filter uploaded documents
-- Extract text from uploaded files
-- Generate AI summaries of medical documents
-- Ask questions answered from your own documents, with sources cited
+- Register and sign in, or sign in with Google
+- Upload PDFs and images. A PDF with no text layer is read with OCR
+- Rename, annotate, download or delete any document you have uploaded
+- Reject a file you have already uploaded, checked by content hash
+- Generate an AI summary of a single document
+- Ask a question and get an answer with its source cited and a one-word
+  confidence label, or an explicit refusal when nothing relevant is found
+- See every medicine found across your prescriptions
+- Rate limits on register, login, upload and ask
 
-## Tech Stack
+## Tech stack
 
-### Frontend
+Frontend
 
-- Next.js 16 (App Router)
-- React 19
+- Next.js 16 (App Router), React 19, TypeScript
 - Tailwind CSS 4
 
-### Backend
+Backend
 
-- Python 3.13
-- FastAPI
-- PostgreSQL
-- pgvector, for document embeddings
-- Uvicorn
+- Python 3.13, FastAPI
+- PostgreSQL 17 with pgvector
+- bge-m3 embeddings and a cross-encoder reranker, both running locally
+- PaddleOCR for scanned documents
+- uv for dependencies and the virtualenv
 
-## Project Structure
+## Project structure
 
 ```txt
 medsync/
@@ -38,18 +48,19 @@ medsync/
     frontend/            Next.js client
     api/                 FastAPI service
       app/
-        controllers/
-        core/
-        db/
-        middlewares/
-        models/
-        repositories/
-        routers/
-        schemas/
-        utils/
+        ai/              extraction, chunking, embeddings, retrieval, answers
+        controllers/     use cases
+        core/            config, security, tokens, rate limiting
+        db/              connection pool, migration runner and numbered .sql files
+        middlewares/     auth dependency
+        repositories/    all SQL lives here
+        routers/         routes and their rate limits
+        schemas/         request shapes
+        storage/         local disk and S3 behind one interface
+  scripts/               database helpers
 ```
 
-## Getting Started
+## Getting started
 
 ### Database
 
@@ -57,14 +68,40 @@ medsync/
 .\scripts\db-start.ps1
 ```
 
-Starts a PostgreSQL 17 container with pgvector on port 5434, backed by the
-`medsync-pgdata` volume.
+Starts PostgreSQL 17 with pgvector in a container named `medsync-postgres` on port
+5434, backed by the `medsync-pgdata` volume. The script is safe to re-run: it
+starts an existing container instead of creating a second one.
 
 ```powershell
 .\scripts\db-stop.ps1
 ```
 
 Stops the container without discarding its data.
+
+### Configuration
+
+```bash
+cd apps/api
+cp .env.example .env
+```
+
+`.env` is gitignored. `.env.example` lists every setting with its default and a
+comment. For local development you only need to fill in a few of them. Paste this
+block into `apps/api/.env`:
+
+```ini
+DATABASE_URL=postgresql://postgres:postgres@localhost:5434/medsync
+JWT_SECRET=replace-with-a-long-random-secret
+CORS_ORIGIN=http://localhost:3000
+FRONTEND_URL=http://localhost:3000
+STORAGE_BACKEND=local
+AI_API_KEY=your-google-ai-studio-key
+```
+
+`AI_API_KEY` is the only one that needs an account. Without it the app runs and
+everything works except answer generation and summaries, which return a clear
+error. Google sign-in also needs `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`;
+without them the Google button returns 503 and email sign-in still works.
 
 ### Migrations
 
@@ -74,42 +111,20 @@ uv run python -m app.db.migrate
 ```
 
 Applies every `.sql` file in `app/db/migrations/` in filename order, recording
-each one in the `schema_migrations` table so it runs at most once.
+each one in the `schema_migrations` table so it runs at most once. Re-running is
+harmless. Migrations are not run at startup, so several API instances cannot race
+each other.
 
 ### API
 
 ```bash
 cd apps/api
-cp .env.example .env
 uv sync
 uv run uvicorn app.main:app --reload
 ```
 
 The API runs at http://127.0.0.1:8000 and its interactive documentation is at
 http://127.0.0.1:8000/docs.
-
-Configuration is read from `apps/api/.env`:
-
-| Variable | Description | Default |
-| --- | --- | --- |
-| `PORT` | Port the API listens on | `8000` |
-| `DATABASE_URL` | PostgreSQL connection string | required |
-| `CORS_ORIGIN` | Allowed browser origins, comma separated | `http://localhost:3000` |
-
-### Lint and format
-
-```bash
-cd apps/api
-uv run ruff check .
-uv run ruff format .
-```
-
-Both run automatically on `git commit` for staged Python files. Install the hook
-once per clone:
-
-```bash
-uv run --project apps/api pre-commit install
-```
 
 ### Frontend
 
@@ -119,7 +134,42 @@ npm install
 npm run dev
 ```
 
-The client runs at http://localhost:5173.
+The client runs at http://localhost:3000.
+
+### Tests
+
+```bash
+cd apps/api
+uv run pytest
+```
+
+The API tests need the database running. They use a separate `medsync_test`
+database and truncate tables between tests.
+
+### Lint and format
+
+Python:
+
+```bash
+cd apps/api
+uv run ruff check .
+uv run ruff format .
+```
+
+Client:
+
+```bash
+cd apps/frontend
+npm run lint
+npx tsc --noEmit
+```
+
+The Python checks run automatically on `git commit` for staged files. Install the
+hook once per clone:
+
+```bash
+uv run --project apps/api pre-commit install
+```
 
 ## License
 

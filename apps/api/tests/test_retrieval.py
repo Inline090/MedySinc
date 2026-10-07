@@ -8,6 +8,7 @@ from app.ai.retrieval import RetrievedChunk, reciprocal_rank_fusion
 
 
 def _chunk(content: str, similarity: float = 0.9) -> RetrievedChunk:
+    """Creates a mock RetrievedChunk with default values."""
     return RetrievedChunk(
         id=uuid4(),
         document_id=uuid4(),
@@ -15,19 +16,20 @@ def _chunk(content: str, similarity: float = 0.9) -> RetrievedChunk:
         content=content,
         token_count=10,
         document_title="Lab report",
-        document_type="lab_report",
         similarity=similarity,
         score=0.02,
     )
 
 
 def test_rrf_scores_a_chunk_by_one_over_k_plus_rank():
+    """Checks that reciprocal rank fusion computes the score correctly."""
     chunk = uuid4()
 
     assert reciprocal_rank_fusion([[chunk]], k=60) == [(chunk, pytest.approx(1 / 61))]
 
 
 def test_rrf_ranks_a_chunk_found_by_both_arms_above_one_found_by_one():
+    """Checks that items found in multiple rankings score higher than items found in one."""
     both = uuid4()
     only_in_first = uuid4()
     only_in_second = uuid4()
@@ -61,6 +63,7 @@ def test_build_sources_rounds_similarity_and_keeps_the_excerpt():
 
 
 async def _seed_document(pool, *, email: str, status: str = "processed") -> tuple[UUID, UUID]:
+    """Creates a user and a document for testing."""
     user_id = await pool.fetchval(
         "INSERT INTO users (email, password_hash) VALUES ($1, 'x') RETURNING id",
         email,
@@ -69,10 +72,10 @@ async def _seed_document(pool, *, email: str, status: str = "processed") -> tupl
     document_id = await pool.fetchval(
         """
         INSERT INTO documents (
-            user_id, title, document_type, original_name, storage_key,
+            user_id, title, original_name, storage_key,
             mime_type, size_bytes, processing_status
         )
-        VALUES ($1, 'Lab report', 'lab_report', 'report.pdf', 'key',
+        VALUES ($1, 'Lab report', 'report.pdf', 'key',
                 'application/pdf', 10, $2)
         RETURNING id
         """,
@@ -84,6 +87,7 @@ async def _seed_document(pool, *, email: str, status: str = "processed") -> tupl
 
 
 def _axis_vector(axis: int) -> str:
+    """Creates a 1024-dimensional vector string with a 1 at the specified axis."""
     values = ["0"] * 1024
     values[axis] = "1"
 
@@ -93,6 +97,7 @@ def _axis_vector(axis: int) -> str:
 async def _seed_chunk(
     pool, *, user_id: UUID, document_id: UUID, index: int, content: str, axis: int
 ):
+    """Inserts a document chunk with a specific embedding vector."""
     await pool.execute(
         """
         INSERT INTO document_chunks (

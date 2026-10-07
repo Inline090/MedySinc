@@ -1,3 +1,5 @@
+"""The database migration runner."""
+
 import asyncio
 from pathlib import Path
 
@@ -7,6 +9,8 @@ MIGRATIONS_DIR = Path(__file__).parent / "migrations"
 
 
 async def run_migrations() -> list[str]:
+    """Apply every pending migration in filename order."""
+
     pool = get_pool()
     applied: list[str] = []
 
@@ -40,6 +44,8 @@ async def run_migrations() -> list[str]:
 
 
 async def main() -> None:
+    """Command-line entry point: connect, migrate, disconnect, report."""
+
     await connect()
     try:
         applied = await run_migrations()

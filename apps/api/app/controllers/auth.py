@@ -1,3 +1,5 @@
+"""The auth feature: register, login, refresh, logout, and Google sign-in."""
+
 import secrets
 from typing import Annotated
 from uuid import UUID
@@ -12,6 +14,7 @@ from app.core.config import settings
 from app.core.cookies import (
     ACCESS_COOKIE,
     REFRESH_COOKIE,
+    REFRESH_COOKIE_PATH,
     access_cookie_options,
     refresh_cookie_options,
 )
@@ -23,10 +26,12 @@ from app.core.tokens import (
     create_access_token,
     create_refresh_token,
     decode_token,
+    token_version_of,
 )
 from app.middlewares.auth import get_current_user
 from app.repositories.identities import PROVIDER_GOOGLE, create_identity, find_identity
 from app.repositories.users import (
+    bump_token_version,
     create_oauth_user,
     create_user,
     find_user_by_email,
@@ -39,6 +44,8 @@ OAUTH_STATE_MAX_AGE = 600
 
 
 def _public_user(user: asyncpg.Record) -> dict[str, object]:
+    """Picks only the user fields that are safe to send to the client."""
+
     return {
         "id": user["id"],
         "email": user["email"],
@@ -48,17 +55,35 @@ def _public_user(user: asyncpg.Record) -> dict[str, object]:
     }
 
 
-def _set_auth_cookies(response: Response, user_id: UUID) -> None:
-    response.set_cookie(ACCESS_COOKIE, create_access_token(user_id), **access_cookie_options())
-    response.set_cookie(REFRESH_COOKIE, create_refresh_token(user_id), **refresh_cookie_options())
+def _set_auth_cookies(response: Response, user: asyncpg.Record) -> None:
+    """Creates access and refresh tokens and sets them as secure cookies."""
+
+    version = int(user.get("token_version", 0))
+
+    response.set_cookie(
+        ACCESS_COOKIE,
+        create_access_token(user["id"], version),
+        **access_cookie_options(),
+    )
+    response.set_cookie(
+        REFRESH_COOKIE,
+        create_refresh_token(user["id"], version),
+        **refresh_cookie_options(),
+    )
 
 
 def _clear_auth_cookies(response: Response) -> None:
+    """Clears both authentication cookies to log the user out."""
+
     response.delete_cookie(ACCESS_COOKIE, path="/")
+
+    response.delete_cookie(REFRESH_COOKIE, path=REFRESH_COOKIE_PATH)
     response.delete_cookie(REFRESH_COOKIE, path="/")
 
 
 async def register_user(payload: RegisterRequest) -> dict[str, object]:
+    """Creates a new user account."""
+
     existing = await find_user_by_email(payload.email)
 
     if existing is not None:
@@ -77,6 +102,8 @@ async def register_user(payload: RegisterRequest) -> dict[str, object]:
 
 
 async def login_user(payload: LoginRequest, response: Response) -> dict[str, object]:
+    """Checks the password and logs the user in."""
+
     user = await find_user_by_email(payload.email)
 
     password_matches = verify_password_or_dummy(
@@ -87,12 +114,14 @@ async def login_user(payload: LoginRequest, response: Response) -> dict[str, obj
     if user is None or not password_matches:
         raise AppError("Invalid email or password", 401)
 
-    _set_auth_cookies(response, user["id"])
+    _set_auth_cookies(response, user)
 
     return {"user": _public_user(user)}
 
 
 async def refresh_tokens(request: Request, response: Response) -> dict[str, object]:
+    """Uses a refresh token to get a new set of login cookies."""
+
     token = request.cookies.get(REFRESH_COOKIE)
 
     if token is None:
@@ -112,12 +141,28 @@ async def refresh_tokens(request: Request, response: Response) -> dict[str, obje
     if user is None:
         raise AppError("Invalid or expired refresh token", 401)
 
-    _set_auth_cookies(response, user_id)
+    if token_version_of(payload) != user["token_version"]:
+        raise AppError("Invalid or expired refresh token", 401)
+
+    _set_auth_cookies(response, user)
 
     return {"user": _public_user(user)}
 
 
-async def logout_user(response: Response) -> dict[str, str]:
+async def logout_user(request: Request, response: Response) -> dict[str, str]:
+    """Logs the user out and invalidates all their tokens."""
+
+    token = request.cookies.get(REFRESH_COOKIE)
+
+    if token is not None:
+        try:
+            payload = decode_token(token)
+        except InvalidTokenError:
+            payload = None
+
+        if payload is not None:
+            await bump_token_version(UUID(str(payload["sub"])))
+
     _clear_auth_cookies(response)
 
     return {"message": "Logged out"}
@@ -126,10 +171,14 @@ async def logout_user(response: Response) -> dict[str, str]:
 async def read_current_user(
     user: Annotated[asyncpg.Record, Depends(get_current_user)],
 ) -> dict[str, object]:
+    """Gets the currently logged-in user's details."""
+
     return {"user": _public_user(user)}
 
 
 async def google_start() -> RedirectResponse:
+    """Starts the Google login process."""
+
     state = new_state()
     response = RedirectResponse(build_authorize_url(state), status_code=303)
 
@@ -147,6 +196,8 @@ async def google_start() -> RedirectResponse:
 
 
 async def _user_from_google_profile(profile: dict[str, object]) -> asyncpg.Record:
+    """Finds or creates a user account from their Google profile."""
+
     subject = str(profile.get("sub") or "")
     email = str(profile.get("email") or "").strip().lower()
 
@@ -169,6 +220,13 @@ async def _user_from_google_profile(profile: dict[str, object]) -> asyncpg.Recor
         # Linking by email is only safe when Google asserts the address is verified.
         if not profile.get("email_verified"):
             raise AppError("That email is already registered", 409)
+
+        if existing["password_hash"]:
+            raise AppError(
+                "An account already exists for that email. Sign in with your "
+                "password first, then link Google from your account.",
+                409,
+            )
 
         await create_identity(
             user_id=existing["id"],
@@ -196,23 +254,34 @@ async def google_callback(
     state: str | None = None,
     error: str | None = None,
 ) -> RedirectResponse:
-    failure = RedirectResponse(f"{settings.FRONTEND_URL}/sign-in?error=google", status_code=303)
+    """Completes the Google login and logs the user in."""
+
+    def _fail() -> RedirectResponse:
+        """Redirects to the login page on failure and cleans up."""
+
+        response = RedirectResponse(
+            f"{settings.FRONTEND_URL}/sign-in?error=google",
+            status_code=303,
+        )
+        response.delete_cookie(OAUTH_STATE_COOKIE, path="/")
+
+        return response
 
     if error or not code or not state:
-        return failure
+        return _fail()
 
     expected = request.cookies.get(OAUTH_STATE_COOKIE)
 
     if expected is None or not secrets.compare_digest(expected, state):
-        return failure
+        return _fail()
 
     try:
         user = await _user_from_google_profile(await fetch_profile(code))
-    except AppError:
-        return failure
+    except (AppError, UniqueViolationError):
+        return _fail()
 
     response = RedirectResponse(f"{settings.FRONTEND_URL}/dashboard", status_code=303)
-    _set_auth_cookies(response, user["id"])
+    _set_auth_cookies(response, user)
     response.delete_cookie(OAUTH_STATE_COOKIE, path="/")
 
     return response

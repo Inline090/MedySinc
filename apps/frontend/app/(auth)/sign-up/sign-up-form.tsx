@@ -40,7 +40,7 @@ export function SignUpForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="w-full max-w-sm rounded-lg border border-neutral-200 bg-white p-8 shadow-sm"
+      className="card w-full max-w-sm"
     >
       <h1 className="text-xl font-semibold">Create an account</h1>
       <p className="mt-1 text-sm text-neutral-500">Upload documents and ask questions about them.</p>

@@ -1,3 +1,5 @@
+"""Queries against the documents table."""
+
 from uuid import UUID
 
 import asyncpg
@@ -7,8 +9,6 @@ from app.db.session import get_pool
 _LIST_COLUMNS = """
     id,
     title,
-    document_type,
-    tags,
     notes,
     original_name,
     mime_type,
@@ -28,59 +28,54 @@ async def create_document(
     *,
     user_id: UUID,
     title: str,
-    document_type: str,
     original_name: str,
     storage_key: str,
     mime_type: str,
     size_bytes: int,
-    tags: list[str],
+    content_hash: str,
     notes: str | None = None,
 ) -> asyncpg.Record:
+    """Inserts a document record for an uploaded file that is already stored."""
+
     pool = get_pool()
 
     return await pool.fetchrow(
         f"""
         INSERT INTO documents (
-            user_id, title, document_type, original_name,
-            storage_key, mime_type, size_bytes, tags, notes
+            user_id, title, original_name,
+            storage_key, mime_type, size_bytes, notes, content_hash
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING {_DETAIL_COLUMNS}
         """,
         user_id,
         title,
-        document_type,
         original_name,
         storage_key,
         mime_type,
         size_bytes,
-        tags,
         notes,
+        content_hash,
     )
 
 
-def _list_filters(
+async def find_document_by_content_hash(
     user_id: UUID,
-    document_type: str | None,
-    tag: str | None,
-    search: str | None,
-) -> tuple[str, list[object]]:
-    conditions = ["user_id = $1"]
-    params: list[object] = [user_id]
+    content_hash: str,
+) -> asyncpg.Record | None:
+    """Look for an existing upload of the same bytes by the same user."""
 
-    if document_type is not None:
-        params.append(document_type)
-        conditions.append(f"document_type = ${len(params)}")
+    pool = get_pool()
 
-    if tag is not None:
-        params.append(tag)
-        conditions.append(f"tags @> ARRAY[${len(params)}]::text[]")
-
-    if search is not None:
-        params.append(search)
-        conditions.append(f"search_vector @@ websearch_to_tsquery('english', ${len(params)})")
-
-    return " AND ".join(conditions), params
+    return await pool.fetchrow(
+        f"""
+        SELECT {_DETAIL_COLUMNS}
+        FROM documents
+        WHERE user_id = $1 AND content_hash = $2
+        """,
+        user_id,
+        content_hash,
+    )
 
 
 async def list_documents(
@@ -88,44 +83,45 @@ async def list_documents(
     user_id: UUID,
     limit: int,
     offset: int,
-    document_type: str | None = None,
-    tag: str | None = None,
-    search: str | None = None,
 ) -> list[asyncpg.Record]:
-    pool = get_pool()
-    where, params = _list_filters(user_id, document_type, tag, search)
+    """Lists a user's documents, starting with the newest."""
 
-    params.extend([limit, offset])
+    pool = get_pool()
 
     return await pool.fetch(
         f"""
         SELECT {_LIST_COLUMNS}
         FROM documents
-        WHERE {where}
+        WHERE user_id = $1
         ORDER BY created_at DESC
-        LIMIT ${len(params) - 1} OFFSET ${len(params)}
+        LIMIT $2 OFFSET $3
         """,
-        *params,
+        user_id,
+        limit,
+        offset,
     )
 
 
 async def count_documents(
     *,
     user_id: UUID,
-    document_type: str | None = None,
-    tag: str | None = None,
-    search: str | None = None,
 ) -> int:
+    """Count one user's documents."""
+
     pool = get_pool()
-    where, params = _list_filters(user_id, document_type, tag, search)
 
     return await pool.fetchval(
-        f"SELECT count(*) FROM documents WHERE {where}",
-        *params,
+        """
+        SELECT count(*) FROM documents
+        WHERE user_id = $1
+        """,
+        user_id,
     )
 
 
 async def find_document_for_user(document_id: UUID, user_id: UUID) -> asyncpg.Record | None:
+    """Fetch one document, but only if it belongs to this user."""
+
     pool = get_pool()
 
     return await pool.fetchrow(
@@ -140,6 +136,8 @@ async def find_document_for_user(document_id: UUID, user_id: UUID) -> asyncpg.Re
 
 
 async def find_document_by_id(document_id: UUID) -> asyncpg.Record | None:
+    """Fetch a document by id alone, with NO user scoping."""
+
     pool = get_pool()
 
     return await pool.fetchrow(
@@ -153,6 +151,8 @@ async def find_document_by_id(document_id: UUID) -> asyncpg.Record | None:
 
 
 async def delete_document(document_id: UUID, user_id: UUID) -> str | None:
+    """Deletes a document and returns its storage key so the file can be removed."""
+
     pool = get_pool()
 
     return await pool.fetchval(
@@ -173,6 +173,8 @@ async def update_document_processing(
     extracted_text: str | None = None,
     error: str | None = None,
 ) -> None:
+    """Move a document through its processing states."""
+
     pool = get_pool()
 
     await pool.execute(
@@ -191,7 +193,36 @@ async def update_document_processing(
     )
 
 
+async def update_document_metadata(
+    document_id: UUID,
+    user_id: UUID,
+    *,
+    title: str | None = None,
+    notes: str | None = None,
+) -> asyncpg.Record | None:
+    """Change a document's title or notes, if it belongs to this user."""
+
+    pool = get_pool()
+
+    return await pool.fetchrow(
+        f"""
+        UPDATE documents
+        SET title = coalesce($3, title),
+            notes = coalesce($4, notes),
+            updated_at = NOW()
+        WHERE id = $1 AND user_id = $2
+        RETURNING {_DETAIL_COLUMNS}
+        """,
+        document_id,
+        user_id,
+        title,
+        notes,
+    )
+
+
 async def update_document_summary(document_id: UUID, *, summary: str, model: str) -> None:
+    """Store a generated summary alongside the model that produced it."""
+
     pool = get_pool()
 
     await pool.execute(

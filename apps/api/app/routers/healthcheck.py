@@ -1,3 +1,5 @@
+"""Route for the healthcheck."""
+
 from fastapi import APIRouter
 
 from app.controllers.healthcheck import health_check

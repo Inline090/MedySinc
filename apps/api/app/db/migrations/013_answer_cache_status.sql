@@ -1,0 +1,2 @@
+ALTER TABLE answer_cache
+    ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'answered';

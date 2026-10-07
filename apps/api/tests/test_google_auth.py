@@ -17,11 +17,14 @@ PROFILE = {
 
 
 def _configure_google(monkeypatch):
+    """Sets dummy Google client ID and secret for testing."""
     monkeypatch.setattr(settings, "GOOGLE_CLIENT_ID", "test-client-id")
     monkeypatch.setattr(settings, "GOOGLE_CLIENT_SECRET", "test-client-secret")
 
 
 def _stub_profile(monkeypatch, profile):
+    """Mocks the Google profile fetch to return a fixed profile."""
+
     async def fake_fetch_profile(code):
         assert code == "auth-code"
         return profile
@@ -30,10 +33,12 @@ def _stub_profile(monkeypatch, profile):
 
 
 def _set_cookie_headers(response, name):
+    """Gets the raw set-cookie headers for a specific cookie name."""
     return [item for item in response.headers.get_list("set-cookie") if item.startswith(f"{name}=")]
 
 
 def _cookie_value(response, name):
+    """Gets the value of a specific cookie from the response."""
     return _set_cookie_headers(response, name)[0].split(";")[0].split("=", 1)[1]
 
 
@@ -114,10 +119,12 @@ async def test_google_callback_creates_user_and_sets_auth_cookies(client, monkey
     assert "password_hash" not in me.json()["user"]
 
 
-async def test_google_callback_links_an_existing_verified_account(client, monkeypatch):
+async def test_google_callback_refuses_to_link_an_account_that_has_a_password(client, monkeypatch):
+    """Checks that Google sign-in won't hijack an existing password account."""
+
     _configure_google(monkeypatch)
     _stub_profile(monkeypatch, PROFILE)
-    registered = await client.post(REGISTER, json={"email": EMAIL, "password": PASSWORD})
+    await client.post(REGISTER, json={"email": EMAIL, "password": PASSWORD})
 
     client.cookies.set("oauth_state", "matching-state")
 
@@ -128,11 +135,44 @@ async def test_google_callback_links_an_existing_verified_account(client, monkey
     )
 
     assert response.status_code == 303
-    assert response.headers["location"].endswith("/dashboard")
+    assert response.headers["location"].endswith("/sign-in?error=google")
+    assert not _set_cookie_headers(response, "access_token")
+
+
+async def test_google_callback_links_an_existing_passwordless_account(client, monkeypatch):
+    """Checks that multiple Google identities can link to the same passwordless account."""
+
+    _configure_google(monkeypatch)
+
+    # First sign-in creates the account, with no password.
+    _stub_profile(monkeypatch, PROFILE)
+    client.cookies.set("oauth_state", "matching-state")
+
+    first = await client.get(
+        CALLBACK,
+        params={"code": "auth-code", "state": "matching-state"},
+        follow_redirects=False,
+    )
+
+    assert first.headers["location"].endswith("/dashboard")
+
+    created = await client.get(ME)
+    created_id = created.json()["user"]["id"]
+
+    _stub_profile(monkeypatch, {**PROFILE, "sub": "google-subject-2"})
+    client.cookies.set("oauth_state", "matching-state")
+
+    second = await client.get(
+        CALLBACK,
+        params={"code": "auth-code", "state": "matching-state"},
+        follow_redirects=False,
+    )
+
+    assert second.headers["location"].endswith("/dashboard")
 
     me = await client.get(ME)
 
-    assert me.json()["user"]["id"] == registered.json()["user"]["id"]
+    assert me.json()["user"]["id"] == created_id
 
 
 async def test_google_callback_refuses_to_link_an_unverified_email(client, monkeypatch):

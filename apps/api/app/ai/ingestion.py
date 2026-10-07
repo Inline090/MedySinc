@@ -1,3 +1,6 @@
+"""Processes an uploaded file so it can be searched later."""
+
+from contextlib import suppress
 from uuid import UUID
 
 import anyio
@@ -5,13 +8,17 @@ import anyio
 from app.ai.chunking import chunk_text
 from app.ai.embeddings import get_embeddings
 from app.ai.extraction import extract_text
+from app.ai.medicines import extract_medicines
 from app.core.exceptions import AppError
 from app.repositories.chunks import replace_document_chunks
 from app.repositories.documents import find_document_by_id, update_document_processing
+from app.repositories.medicines import replace_document_medicines
 from app.storage import get_storage
 
 
 async def ingest_document(document_id: UUID) -> int:
+    """Takes one uploaded document and makes it searchable."""
+
     document = await find_document_by_id(document_id)
 
     if document is None:
@@ -41,6 +48,13 @@ async def ingest_document(document_id: UUID) -> int:
     except Exception as error:
         await update_document_processing(document_id, status="failed", error=str(error))
         raise
+
+    with suppress(Exception):
+        await replace_document_medicines(
+            document_id=document_id,
+            user_id=document["user_id"],
+            rows=await extract_medicines(text),
+        )
 
     await update_document_processing(document_id, status="processed", extracted_text=text)
 

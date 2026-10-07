@@ -23,6 +23,7 @@ PASSWORD = "secret123"
 
 
 async def _seed_user(email: str) -> UUID:
+    """Creates a user with the given email and returns their ID."""
     return await get_pool().fetchval(
         "INSERT INTO users (email, password_hash) VALUES ($1, 'x') RETURNING id",
         email,
@@ -30,6 +31,7 @@ async def _seed_user(email: str) -> UUID:
 
 
 def _png() -> bytes:
+    """Generates a simple PNG image containing the word 'Paracetamol'."""
     document = pymupdf.open()
     page = document.new_page(width=200, height=100)
     page.insert_text((20, 50), "Paracetamol", fontsize=16)
@@ -40,12 +42,14 @@ def _png() -> bytes:
 
 
 def test_question_fingerprint_ignores_case_and_whitespace():
+    """Checks that question fingerprints ignore case and whitespace differences."""
     assert question_fingerprint("When was  Dolo taken?") == question_fingerprint(
         "when was dolo taken?"
     )
 
 
 async def test_a_saved_answer_can_be_read_back(client: AsyncClient):
+    """Checks that a saved answer can be retrieved from the database."""
     user_id = await _seed_user("cache-read@example.com")
 
     await save_answer(
@@ -54,6 +58,7 @@ async def test_a_saved_answer_can_be_read_back(client: AsyncClient):
         answer="At 7 PM.",
         sources=[{"document_title": "rx"}],
         model="gemini-2.5-flash",
+        status="answered",
     )
 
     row = await find_cached_answer(user_id=user_id, question="WHEN WAS  dolo taken", ttl_hours=24)
@@ -63,20 +68,43 @@ async def test_a_saved_answer_can_be_read_back(client: AsyncClient):
 
 
 async def test_an_expired_answer_is_ignored(client: AsyncClient):
+    """Checks that answers older than the TTL are not returned."""
     user_id = await _seed_user("cache-expired@example.com")
 
-    await save_answer(user_id=user_id, question="q", answer="a", sources=[], model=None)
+    await save_answer(
+        user_id=user_id,
+        question="q",
+        answer="a",
+        sources=[],
+        model=None,
+        status="not_found",
+    )
     await get_pool().execute("UPDATE answer_cache SET created_at = NOW() - INTERVAL '48 hours'")
 
     assert await find_cached_answer(user_id=user_id, question="q", ttl_hours=24) is None
 
 
 async def test_clearing_removes_only_that_users_answers(client: AsyncClient):
+    """Checks that clearing cache for one user doesn't affect others."""
     mine = await _seed_user("cache-mine@example.com")
     theirs = await _seed_user("cache-theirs@example.com")
 
-    await save_answer(user_id=mine, question="q", answer="mine", sources=[], model=None)
-    await save_answer(user_id=theirs, question="q", answer="theirs", sources=[], model=None)
+    await save_answer(
+        user_id=mine,
+        question="q",
+        answer="mine",
+        sources=[],
+        model=None,
+        status="not_found",
+    )
+    await save_answer(
+        user_id=theirs,
+        question="q",
+        answer="theirs",
+        sources=[],
+        model=None,
+        status="not_found",
+    )
 
     await clear_answers_for_user(mine)
 
@@ -87,6 +115,7 @@ async def test_clearing_removes_only_that_users_answers(client: AsyncClient):
 async def test_a_repeated_question_does_not_run_the_pipeline_twice(
     client: AsyncClient, monkeypatch
 ):
+    """Checks that asking the same question twice returns the cached answer."""
     calls = {"llm": 0}
 
     async def fake_retrieval(**_kwargs):
@@ -99,7 +128,6 @@ async def test_a_repeated_question_does_not_run_the_pipeline_twice(
                     "content": "Dolo 650, twice daily",
                     "token_count": 5,
                     "document_title": "rx",
-                    "document_type": "prescription",
                     "similarity": 0.9,
                     "score": 0.02,
                 }
@@ -130,6 +158,7 @@ async def test_a_repeated_question_does_not_run_the_pipeline_twice(
 
 
 async def test_uploading_a_document_clears_cached_answers(client: AsyncClient, monkeypatch):
+    """Checks that uploading a new document invalidates the user's cached answers."""
     cleared: list[UUID] = []
 
     async def spy(user_id: UUID) -> None:
@@ -147,7 +176,6 @@ async def test_uploading_a_document_clears_cached_answers(client: AsyncClient, m
     response = await client.post(
         UPLOAD,
         files={"file": ("scan.png", _png(), "image/png")},
-        data={"document_type": "other"},
     )
 
     assert response.status_code == 201
@@ -155,6 +183,8 @@ async def test_uploading_a_document_clears_cached_answers(client: AsyncClient, m
 
 
 async def test_a_refusal_is_cached_too(client: AsyncClient, monkeypatch):
+    """Checks that 'not found' answers are also cached."""
+
     async def fake_retrieval(**_kwargs):
         return Retrieval(chunks=[], best_similarity=0.0)
 
@@ -166,6 +196,7 @@ async def test_a_refusal_is_cached_too(client: AsyncClient, monkeypatch):
     first = await client.post(ASK, json={"question": "what is my insurance number?"})
     second = await client.post(ASK, json={"question": "what is my insurance number?"})
 
+    assert first.json()["status"] == "not_found"
     assert first.json()["model"] is None
     assert first.json()["cached"] is False
     assert second.json()["cached"] is True

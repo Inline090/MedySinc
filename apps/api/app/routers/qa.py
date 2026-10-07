@@ -1,3 +1,5 @@
+"""Routes for asking questions."""
+
 from typing import Annotated
 
 import asyncpg
@@ -15,6 +17,8 @@ async def ask(
     payload: AskRequest,
     user: Annotated[asyncpg.Record, Depends(get_current_user)],
 ) -> dict[str, object]:
+    """Answers a question using the logged-in user's documents."""
+
     return await answer_question(user_id=user["id"], question=payload.question)
 
 

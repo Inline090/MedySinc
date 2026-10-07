@@ -1,3 +1,5 @@
+"""Pulls text from uploaded files (PDFs or images)."""
+
 import io
 from functools import lru_cache
 
@@ -14,9 +16,8 @@ MIN_TEXT_LENGTH = 50
 
 @lru_cache
 def _engine() -> PaddleOCR:
-    # enable_mkldnn=False works around a native crash in Paddle's oneDNN path:
-    # "ConvertPirAttribute2RuntimeAttribute not support [pir::ArrayAttribute<...>]".
-    # The orientation and unwarping stages are off so no extra models are downloaded.
+    """Sets up the OCR (image-to-text) engine once and reuses it."""
+
     return PaddleOCR(
         lang=settings.OCR_LANGUAGE,
         enable_mkldnn=False,
@@ -27,6 +28,8 @@ def _engine() -> PaddleOCR:
 
 
 def extract_text(data: bytes, mime_type: str) -> str:
+    """Gets the text from an uploaded file, using OCR only if needed."""
+
     if mime_type == "application/pdf":
         text = _extract_pdf_text(data)
 
@@ -39,10 +42,14 @@ def extract_text(data: bytes, mime_type: str) -> str:
 
 
 def needs_ocr(text: str) -> bool:
+    """Checks if a PDF has so little text that we should try OCR instead."""
+
     return len(text.strip()) < MIN_TEXT_LENGTH
 
 
 def _ocr_image(data: bytes) -> str:
+    """Uses OCR to find text in an image."""
+
     if not settings.OCR_ENABLED:
         return ""
 
@@ -60,6 +67,8 @@ def _ocr_image(data: bytes) -> str:
 
 
 def _ocr_pdf(data: bytes) -> str:
+    """Turns a scanned PDF into images and runs OCR on each page."""
+
     if not settings.OCR_ENABLED:
         return ""
 
@@ -77,6 +86,8 @@ def _ocr_pdf(data: bytes) -> str:
 
 
 def _extract_pdf_text(data: bytes) -> str:
+    """Reads the built-in text from a PDF. Fast and easy."""
+
     try:
         with pymupdf.open(stream=data, filetype="pdf") as document:
             pages = [page.get_text().strip() for page in document]

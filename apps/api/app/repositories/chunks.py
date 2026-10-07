@@ -1,3 +1,5 @@
+"""Queries against the document_chunks table, where the vector data is stored."""
+
 from uuid import UUID
 
 import asyncpg
@@ -7,6 +9,8 @@ from app.db.session import get_pool
 
 
 def _to_vector(embedding: list[float]) -> str:
+    """Render a Python float list as the string pgvector expects."""
+
     return "[" + ",".join(str(value) for value in embedding) + "]"
 
 
@@ -17,7 +21,6 @@ _SEARCH_COLUMNS = """
     c.content,
     c.token_count,
     d.title AS document_title,
-    d.document_type,
     1 - (c.embedding <=> $1::vector) AS similarity
 """
 
@@ -28,6 +31,8 @@ async def replace_document_chunks(
     user_id: UUID,
     chunks: list[tuple[int, str, int, list[float]]],
 ) -> None:
+    """Store a document's chunks, replacing any it already had."""
+
     pool = get_pool()
 
     async with pool.acquire() as connection, connection.transaction():
@@ -51,6 +56,8 @@ async def replace_document_chunks(
 
 
 async def count_document_chunks(document_id: UUID) -> int:
+    """Count how many chunks a document has."""
+
     pool = get_pool()
 
     return await pool.fetchval(
@@ -60,6 +67,8 @@ async def count_document_chunks(document_id: UUID) -> int:
 
 
 async def find_chunks_for_document(document_id: UUID) -> list[asyncpg.Record]:
+    """Read a document's chunks in order, without their vectors."""
+
     pool = get_pool()
 
     return await pool.fetch(
@@ -79,6 +88,8 @@ async def search_chunks_by_vector(
     embedding: list[float],
     limit: int,
 ) -> list[asyncpg.Record]:
+    """Finds chunks with a similar meaning to the user's question."""
+
     pool = get_pool()
 
     async with pool.acquire() as connection, connection.transaction():
@@ -107,6 +118,8 @@ async def search_chunks_by_text(
     query: str,
     limit: int,
 ) -> list[asyncpg.Record]:
+    """Find the chunks that share exact words with the question."""
+
     pool = get_pool()
 
     return await pool.fetch(

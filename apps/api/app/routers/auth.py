@@ -1,3 +1,5 @@
+"""Routes for authentication."""
+
 from fastapi import APIRouter, Depends
 
 from app.controllers.auth import (

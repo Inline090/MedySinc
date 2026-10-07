@@ -1,3 +1,5 @@
+"""Splits a document into overlapping pieces (chunks) for searching."""
+
 import re
 from dataclasses import dataclass
 
@@ -14,16 +16,22 @@ _SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?])\s+")
 
 @dataclass(frozen=True)
 class Chunk:
+    """One piece of a document, ready to be saved."""
+
     index: int
     content: str
     token_count: int
 
 
 def estimate_tokens(text: str) -> int:
+    """Guesses how many tokens a piece of text uses."""
+
     return max(1, round(len(text) / CHARS_PER_TOKEN))
 
 
 def split_sentences(text: str) -> list[str]:
+    """Splits text into sentences."""
+
     normalized = _WHITESPACE.sub(" ", text).strip()
 
     if not normalized:
@@ -33,6 +41,8 @@ def split_sentences(text: str) -> list[str]:
 
 
 def _split_oversized(unit: str, max_chars: int) -> list[str]:
+    """Breaks a long sentence into smaller pieces by splitting at words."""
+
     if len(unit) <= max_chars:
         return [unit]
 
@@ -56,6 +66,8 @@ def _split_oversized(unit: str, max_chars: int) -> list[str]:
 
 
 def _overlap_units(units: list[str], overlap_chars: int) -> list[str]:
+    """Chooses sentences from the end of one chunk to repeat in the next chunk."""
+
     if overlap_chars <= 0:
         return []
 
@@ -77,6 +89,8 @@ def chunk_text(
     max_tokens: int = MAX_TOKENS,
     overlap_tokens: int = OVERLAP_TOKENS,
 ) -> list[Chunk]:
+    """Cuts a document into smaller chunks."""
+
     max_chars = max_tokens * CHARS_PER_TOKEN
     overlap_chars = overlap_tokens * CHARS_PER_TOKEN
 

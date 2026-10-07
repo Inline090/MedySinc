@@ -1,3 +1,5 @@
+"""Handles the Google OAuth 2.0 flow: building the URL and exchanging the code."""
+
 import secrets
 from urllib.parse import urlencode
 
@@ -14,10 +16,14 @@ TIMEOUT_SECONDS = 10.0
 
 
 def new_state() -> str:
+    """Generates a random state string to protect against CSRF attacks."""
+
     return secrets.token_urlsafe(32)
 
 
 def build_authorize_url(state: str) -> str:
+    """Creates the Google login URL for the user to visit."""
+
     if not settings.GOOGLE_CLIENT_ID:
         raise AppError("Google sign-in is not configured", 503)
 
@@ -36,6 +42,8 @@ def build_authorize_url(state: str) -> str:
 
 
 async def fetch_profile(code: str) -> dict[str, object]:
+    """Swaps the Google auth code for the user's profile info."""
+
     if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
         raise AppError("Google sign-in is not configured", 503)
 

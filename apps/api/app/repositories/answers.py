@@ -1,3 +1,5 @@
+"""Queries for the answer_cache table."""
+
 import hashlib
 import json
 from uuid import UUID
@@ -8,6 +10,8 @@ from app.db.session import get_pool
 
 
 def question_fingerprint(question: str) -> str:
+    """Turn a question into a stable cache key."""
+
     normalized = " ".join(question.lower().split())
 
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
@@ -19,11 +23,13 @@ async def find_cached_answer(
     question: str,
     ttl_hours: int,
 ) -> asyncpg.Record | None:
+    """Fetch a cached answer if one exists and is still fresh."""
+
     pool = get_pool()
 
     return await pool.fetchrow(
         """
-        SELECT answer, sources, model
+        SELECT answer, sources, model, status
         FROM answer_cache
         WHERE user_id = $1
           AND question_hash = $2
@@ -42,18 +48,22 @@ async def save_answer(
     answer: str,
     sources: list[dict[str, object]],
     model: str | None,
+    status: str,
 ) -> None:
+    """Store or replace an answer in the cache."""
+
     pool = get_pool()
 
     await pool.execute(
         """
-        INSERT INTO answer_cache (user_id, question_hash, question, answer, sources, model)
-        VALUES ($1, $2, $3, $4, $5::jsonb, $6)
+        INSERT INTO answer_cache (user_id, question_hash, question, answer, sources, model, status)
+        VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7)
         ON CONFLICT (user_id, question_hash)
         DO UPDATE SET answer = EXCLUDED.answer,
                       sources = EXCLUDED.sources,
                       model = EXCLUDED.model,
-                      created_at = NOW()
+                      status = EXCLUDED.status,
+                      created_at = NOW()    
         """,
         user_id,
         question_fingerprint(question),
@@ -61,10 +71,13 @@ async def save_answer(
         answer,
         json.dumps(sources),
         model,
+        status,
     )
 
 
 async def clear_answers_for_user(user_id: UUID) -> None:
+    """Delete every cached answer belonging to one user."""
+
     pool = get_pool()
 
     await pool.execute("DELETE FROM answer_cache WHERE user_id = $1", user_id)

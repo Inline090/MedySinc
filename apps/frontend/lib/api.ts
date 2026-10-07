@@ -4,6 +4,7 @@ import type {
   DocumentResponse,
   ErrorField,
   ErrorPayload,
+  MedicineListResponse,
   MessageResponse,
   SummaryResponse,
   UserResponse,
@@ -38,6 +39,10 @@ const NO_REFRESH_PATHS = new Set([
 
 let refreshing: Promise<boolean> | null = null;
 
+function onAuthPage(): boolean {
+  return window.location.pathname.startsWith("/sign-in") || window.location.pathname.startsWith("/sign-up");
+}
+
 function refreshSession(): Promise<boolean> {
   if (refreshing === null) {
     refreshing = fetch(`${API_URL}/api/v1/auth/refresh`, {
@@ -71,11 +76,21 @@ async function send(path: string, options: RequestOptions): Promise<Response> {
 }
 
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  let response = await send(path, options);
+  let response: Response;
 
-  // The access token lasts 30 minutes. One silent refresh, then one retry.
-  if (response.status === 401 && !NO_REFRESH_PATHS.has(path) && (await refreshSession())) {
+  try {
     response = await send(path, options);
+  } catch {
+    throw new ApiError("Could not reach the API. Is it running?", 0);
+  }
+
+  // If we get a 401 error, try refreshing the token once and retry the request.
+  if (response.status === 401 && !NO_REFRESH_PATHS.has(path)) {
+    if (await refreshSession()) {
+      response = await send(path, options);
+    } else if (!onAuthPage()) {
+      window.location.assign("/sign-in");
+    }
   }
 
   const payload: unknown = await response.json().catch(() => null);
@@ -110,9 +125,6 @@ function withQuery(path: string, params: Record<string, string | number | undefi
 export interface DocumentFilters {
   limit?: number;
   offset?: number;
-  document_type?: string;
-  tag?: string;
-  search?: string;
 }
 
 export interface Credentials {
@@ -138,6 +150,12 @@ export const api = {
 
   getDocument: (id: string) => request<DocumentResponse>(`/api/v1/documents/${id}`),
 
+  // Just a string URL. The browser downloads it directly instead of loading the bytes into memory.
+  documentFileUrl: (id: string) => `${API_URL}/api/v1/documents/${id}/file`,
+
+  updateDocument: (id: string, body: { title?: string; notes?: string }) =>
+    request<DocumentResponse>(`/api/v1/documents/${id}`, { method: "PATCH", body }),
+
   uploadDocument: (form: FormData) =>
     request<DocumentResponse>("/api/v1/documents", { method: "POST", form }),
 
@@ -148,4 +166,9 @@ export const api = {
     request<SummaryResponse>(`/api/v1/documents/${id}/summary`, { method: "POST" }),
 
   ask: (question: string) => request<Answer>("/api/v1/ask", { method: "POST", body: { question } }),
+
+  listMedications: (filters: DocumentFilters = {}) =>
+    request<MedicineListResponse>(
+      withQuery("/api/v1/medications", filters as Record<string, string | number | undefined>),
+    ),
 };

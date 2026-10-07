@@ -1,3 +1,5 @@
+"""Finds the document pieces that can answer a question."""
+
 from dataclasses import dataclass
 from typing import NotRequired, TypedDict, cast
 from uuid import UUID
@@ -13,13 +15,14 @@ RRF_K = 60
 
 
 class RetrievedChunk(TypedDict):
+    """A single document piece during the search process."""
+
     id: UUID
     document_id: UUID
     chunk_index: int
     content: str
     token_count: int
     document_title: str
-    document_type: str
     similarity: float
     score: float
     rerank_score: NotRequired[float]
@@ -27,11 +30,15 @@ class RetrievedChunk(TypedDict):
 
 @dataclass(frozen=True)
 class Retrieval:
+    """The final search results."""
+
     chunks: list[RetrievedChunk]
     best_similarity: float
 
 
 def reciprocal_rank_fusion(rankings: list[list[UUID]], k: int = RRF_K) -> list[tuple[UUID, float]]:
+    """Combines multiple search result lists by looking at their positions."""
+
     scores: dict[UUID, float] = {}
 
     for ranking in rankings:
@@ -42,6 +49,8 @@ def reciprocal_rank_fusion(rankings: list[list[UUID]], k: int = RRF_K) -> list[t
 
 
 async def _rerank(query: str, pool: list[RetrievedChunk]) -> list[RetrievedChunk]:
+    """Re-scores and sorts a short list of results using a stronger AI model."""
+
     scores = await get_reranker().rerank(query, [chunk["content"] for chunk in pool])
 
     for chunk, score in zip(pool, scores, strict=True):
@@ -57,6 +66,8 @@ async def find_relevant_chunks(
     limit: int = DEFAULT_RESULTS,
     recall: int = RECALL_SIZE,
 ) -> Retrieval:
+    """Finds the best document pieces to answer a question."""
+
     embedding = (await get_embeddings().embed([query]))[0]
 
     vector_rows = await search_chunks_by_vector(

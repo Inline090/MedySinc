@@ -1,1 +1,77 @@
 @import "tailwindcss";
+
+/* The page backdrop, shared by every screen.
+
+   It sits on its own fixed layer rather than on <body>, because opacity on a
+   container fades its children too - the cards and all their text would go
+   translucent along with the pattern. On a ::before layer behind the content,
+   the background keeps its 0.8 opacity and everything on top stays solid. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+
+  background-color: #e5e5f7;
+  opacity: 0.8;
+  background-image: radial-gradient(
+      circle at 50% 100%,
+      transparent 20%,
+      #444cf7 21%,
+      #444cf7 34%,
+      transparent 35%,
+      transparent
+    ),
+    radial-gradient(
+      circle at 50% 0%,
+      transparent 20%,
+      #444cf7 21%,
+      #444cf7 34%,
+      transparent 35%,
+      transparent
+    );
+  background-position:
+    0 0,
+    -20px 0;
+  background-size: 40px 30px;
+}
+
+/* The surface that holds a page's text and controls. */
+.card {
+  border-radius: 1rem;
+  border: 1px solid #e5e5e5;
+  background-color: #ffffff;
+  padding: 1.5rem;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 8px 24px rgb(0 0 0 / 0.06);
+}
+
+/* The choose-file control. */
+.file-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  border: 2px dashed #c9c9dd;
+  border-radius: 1rem;
+  background-color: #f7f7fd;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+.file-drop:hover,
+.file-drop:focus-within {
+  border-color: #444cf7;
+  background-color: #f0f0fc;
+}
+
+/* Set while a file is held over the box. */
+.file-drop[data-dragging="true"] {
+  border-color: #444cf7;
+  background-color: #e7e7fb;
+}

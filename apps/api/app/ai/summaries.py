@@ -1,6 +1,9 @@
+"""Creates a summary of a single document."""
+
 from uuid import UUID
 
 from app.ai.llm import get_llm
+from app.ai.redaction import redact
 from app.core.config import settings
 from app.core.exceptions import AppError
 from app.repositories.documents import find_document_by_id, update_document_summary
@@ -20,6 +23,8 @@ SUMMARY_SYSTEM_INSTRUCTION = (
 
 
 async def generate_document_summary(document_id: UUID) -> str:
+    """Creates a summary for a document and saves it."""
+
     document = await find_document_by_id(document_id)
 
     if document is None:
@@ -30,7 +35,7 @@ async def generate_document_summary(document_id: UUID) -> str:
     if not text:
         raise AppError("This document has no extracted text to summarise", 409)
 
-    summary = await get_llm().complete(SUMMARY_SYSTEM_INSTRUCTION, text)
+    summary = await get_llm().complete(SUMMARY_SYSTEM_INSTRUCTION, redact(text))
 
     if not summary:
         raise AppError("The summarisation model returned nothing", 502)

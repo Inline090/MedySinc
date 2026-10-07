@@ -1,3 +1,5 @@
+"""Middleware to turn a cookie into an authenticated user."""
+
 from uuid import UUID
 
 import asyncpg
@@ -6,13 +8,15 @@ from jwt import InvalidTokenError
 
 from app.core.cookies import ACCESS_COOKIE
 from app.core.exceptions import AppError
-from app.core.tokens import ACCESS_TOKEN_TYPE, decode_token
+from app.core.tokens import ACCESS_TOKEN_TYPE, decode_token, token_version_of
 from app.repositories.users import find_user_by_id
 
 
 async def get_current_user(
     access_token: str | None = Cookie(default=None, alias=ACCESS_COOKIE),
 ) -> asyncpg.Record:
+    """Gets the logged-in user from their access token cookie."""
+
     if access_token is None:
         raise AppError("Not authenticated", 401)
 
@@ -27,6 +31,9 @@ async def get_current_user(
     user = await find_user_by_id(UUID(str(payload["sub"])))
 
     if user is None:
+        raise AppError("Invalid or expired session", 401)
+
+    if token_version_of(payload) != user["token_version"]:
         raise AppError("Invalid or expired session", 401)
 
     return user

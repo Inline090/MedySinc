@@ -1,3 +1,5 @@
+"""The factory that picks a storage backend."""
+
 from functools import lru_cache
 from pathlib import Path
 
@@ -10,6 +12,8 @@ from app.storage.s3 import S3Storage
 
 @lru_cache
 def get_storage() -> Storage:
+    """Returns the configured storage backend, creating it only once."""
+
     if settings.STORAGE_BACKEND == "s3":
         if not settings.S3_BUCKET:
             raise AppError("S3_BUCKET must be set when STORAGE_BACKEND is s3", 503)

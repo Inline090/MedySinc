@@ -7,14 +7,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import type { DocumentSummary } from "@/lib/types";
 
-const DOCUMENT_TYPES = [
-  "lab_report",
-  "prescription",
-  "discharge_summary",
-  "imaging",
-  "other",
-] as const;
-
 type LoadStatus = "loading" | "ready" | "error";
 
 function formatDate(value: string): string {
@@ -29,10 +21,9 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
-  const [documentType, setDocumentType] = useState<string>("other");
-  const [tags, setTags] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [dragging, setDragging] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,18 +39,14 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
     try {
       const form = new FormData();
       form.append("file", file);
-      form.append("document_type", documentType);
 
       if (title.trim()) form.append("title", title.trim());
-      if (tags.trim()) form.append("tags", tags.trim());
 
       await api.uploadDocument(form);
 
       setFile(null);
       setTitle("");
-      setTags("");
-      // React clears event.currentTarget once the handler's sync part ends,
-      // so resetting after an await needs a ref.
+      // React drops the event target after the async wait, so we need to use a ref to clear the form.
       formRef.current?.reset();
       onUploaded();
     } catch (failure) {
@@ -77,19 +64,55 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
     >
       <h2 className="text-sm font-semibold">Upload a document</h2>
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <label className="block text-sm">
-          <span className="font-medium">File</span>
+      <div className="mt-4">
+        <span className="text-sm font-medium">File</span>
+
+        <label
+          className="file-drop mt-1"
+          data-dragging={dragging}
+          onDragOver={(event) => {
+            event.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(event) => {
+            event.preventDefault();
+            setDragging(false);
+            setFile(event.dataTransfer.files?.[0] ?? null);
+          }}
+        >
           <input
             type="file"
             accept="application/pdf,image/png,image/jpeg"
             onChange={(event: ChangeEvent<HTMLInputElement>) =>
               setFile(event.target.files?.[0] ?? null)
             }
-            className="mt-1 w-full text-sm"
+            className="sr-only"
           />
-        </label>
 
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            className="h-8 w-8 text-neutral-400"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 16V4m0 0L8 8m4-4 4 4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"
+            />
+          </svg>
+
+          <span className="text-sm font-medium">
+            {file ? file.name : "Choose a file or drag it here"}
+          </span>
+          <span className="text-xs text-neutral-500">PDF, PNG or JPEG, up to 10 MB</span>
+        </label>
+      </div>
+
+      <div className="mt-4">
         <label className="block text-sm">
           <span className="font-medium">Title</span>
           <input
@@ -101,31 +124,6 @@ export function UploadForm({ onUploaded }: UploadFormProps) {
           />
         </label>
 
-        <label className="block text-sm">
-          <span className="font-medium">Type</span>
-          <select
-            value={documentType}
-            onChange={(event) => setDocumentType(event.target.value)}
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          >
-            {DOCUMENT_TYPES.map((value) => (
-              <option key={value} value={value}>
-                {value.replace(/_/g, " ")}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label className="block text-sm">
-          <span className="font-medium">Tags</span>
-          <input
-            type="text"
-            value={tags}
-            placeholder="comma, separated"
-            onChange={(event) => setTags(event.target.value)}
-            className="mt-1 w-full rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          />
-        </label>
       </div>
 
       {error ? (
@@ -229,8 +227,7 @@ export function DocumentList() {
                   {document.title}
                 </Link>
                 <p className="mt-0.5 text-xs text-neutral-500">
-                  {document.document_type.replace(/_/g, " ")} · {formatDate(document.created_at)} ·{" "}
-                  {document.processing_status}
+                  {formatDate(document.created_at)}. {document.processing_status}
                 </p>
               </div>
 

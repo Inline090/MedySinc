@@ -1,3 +1,5 @@
+"""Handles password hashing and protects against timing attacks."""
+
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
 
@@ -5,10 +7,14 @@ _hasher = PasswordHasher()
 
 
 def hash_password(password: str) -> str:
+    """Hashes a password so it can be saved safely."""
+
     return _hasher.hash(password)
 
 
 def verify_password(password: str, password_hash: str) -> bool:
+    """Checks if a password matches the saved hash."""
+
     try:
         return _hasher.verify(password_hash, password)
     except (VerificationError, InvalidHashError):
@@ -22,4 +28,6 @@ DUMMY_HASH = (
 
 
 def verify_password_or_dummy(password: str, password_hash: str | None) -> bool:
+    """Checks a password, always doing the hard work even if the user doesn't exist."""
+
     return verify_password(password, password_hash or DUMMY_HASH)

@@ -1,9 +1,19 @@
+"""The storage interface."""
+
 from typing import Protocol
 
 
 class Storage(Protocol):
-    async def save(self, key: str, data: bytes, content_type: str) -> None: ...
+    """Where uploaded documents are stored."""
 
-    async def read(self, key: str) -> bytes: ...
+    async def save(self, key: str, data: bytes, content_type: str) -> None:
+        """Stores file bytes under a specific key."""
+        ...
 
-    async def delete(self, key: str) -> None: ...
+    async def read(self, key: str) -> bytes:
+        """Retrieves the file bytes for a given key."""
+        ...
+
+    async def delete(self, key: str) -> None:
+        """Deletes the file stored at a given key."""
+        ...

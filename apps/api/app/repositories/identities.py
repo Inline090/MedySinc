@@ -1,3 +1,5 @@
+"""Queries against the user_identities table."""
+
 from uuid import UUID
 
 import asyncpg
@@ -8,6 +10,8 @@ PROVIDER_GOOGLE = "google"
 
 
 async def find_identity(provider: str, provider_subject: str) -> asyncpg.Record | None:
+    """Checks if an external identity (like Google) is already linked to a user."""
+
     pool = get_pool()
 
     return await pool.fetchrow(
@@ -22,6 +26,8 @@ async def find_identity(provider: str, provider_subject: str) -> asyncpg.Record 
 
 
 async def create_identity(*, user_id: UUID, provider: str, provider_subject: str) -> None:
+    """Links an external identity to a local user account."""
+
     pool = get_pool()
 
     await pool.execute(
