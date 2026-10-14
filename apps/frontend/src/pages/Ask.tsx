@@ -1,6 +1,4 @@
-"use client";
-
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import type { FormEvent, KeyboardEvent } from "react";
 import { useEffect, useRef, useState } from "react";
 
@@ -166,7 +164,7 @@ function AnswerBubble({ answer }: { answer: Answer }) {
             <li key={`${source.document_id}-${source.chunk_index}`}>
               <div className="flex items-baseline justify-between gap-4">
                 <Link
-                  href={`/documents/${source.document_id}`}
+                  to={`/documents/${source.document_id}`}
                   className="truncate text-xs font-medium underline"
                 >
                   [{position + 1}] {source.document_title}

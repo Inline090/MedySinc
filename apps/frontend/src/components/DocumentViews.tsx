@@ -1,6 +1,4 @@
-"use client";
-
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import type { ChangeEvent, FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -221,7 +219,7 @@ export function DocumentList() {
             <li key={document.id} className="flex items-center justify-between gap-4 px-4 py-3">
               <div className="min-w-0">
                 <Link
-                  href={`/documents/${document.id}`}
+                  to={`/documents/${document.id}`}
                   className="block truncate text-sm font-medium underline"
                 >
                   {document.title}

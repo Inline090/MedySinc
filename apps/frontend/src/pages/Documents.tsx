@@ -1,8 +1,6 @@
-"use client";
-
 import { useState } from "react";
 
-import { DocumentList, UploadForm } from "./document-views";
+import { DocumentList, UploadForm } from "@/components/DocumentViews";
 
 export default function DocumentsPage() {
   const [refreshToken, setRefreshToken] = useState(0);

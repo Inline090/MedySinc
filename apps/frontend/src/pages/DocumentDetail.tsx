@@ -1,7 +1,5 @@
-"use client";
-
-import Link from "next/link";
-import { useParams } from "next/navigation";
+import { Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import { AiDisclaimer } from "@/components/disclaimer";
@@ -9,7 +7,7 @@ import { api } from "@/lib/api";
 import type { DocumentDetail } from "@/lib/types";
 
 export default function DocumentDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { id = "" } = useParams();
   const [document, setDocument] = useState<DocumentDetail | null>(null);
   const [summary, setSummary] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +84,7 @@ export default function DocumentDetailPage() {
 
   return (
     <div>
-      <Link href="/documents" className="text-sm text-neutral-500 underline">
+      <Link to="/documents" className="text-sm text-neutral-500 underline">
         Back to documents
       </Link>
 

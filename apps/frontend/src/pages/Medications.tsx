@@ -1,6 +1,4 @@
-"use client";
-
-import Link from "next/link";
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import { AiDisclaimer } from "@/components/disclaimer";
@@ -85,7 +83,7 @@ export default function MedicationsPage() {
                   <Cell value={medicine.notes} />
                   <td className="px-4 py-3">
                     <Link
-                      href={`/documents/${medicine.document_id}`}
+                      to={`/documents/${medicine.document_id}`}
                       className="text-xs text-neutral-600 underline"
                     >
                       {medicine.document_title}

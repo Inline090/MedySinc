@@ -1,5 +1,3 @@
-"use client";
-
 import { useSession } from "@/lib/session";
 
 export default function DashboardPage() {

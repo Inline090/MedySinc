@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "react-router-dom";
 
 export default function HomePage() {
   return (
@@ -12,13 +12,13 @@ export default function HomePage() {
 
         <div className="mt-8 flex gap-3">
           <Link
-            href="/sign-in"
+            to="/sign-in"
             className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white"
           >
             Sign in
           </Link>
           <Link
-            href="/sign-up"
+            to="/sign-up"
             className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium"
           >
             Create an account

@@ -1,21 +1,19 @@
-"use client";
-
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { useEffect } from "react";
 
 import { useSession } from "@/lib/session";
 
-export default function AppLayout({ children }: { children: ReactNode }) {
+export default function AppLayout() {
   const { status, user, signOut } = useSession();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (status === "anonymous") {
-      router.replace("/sign-in");
+      navigate("/sign-in");
     }
-  }, [status, router]);
+  }, [status, navigate]);
 
   if (status !== "authenticated") {
     return (
@@ -32,16 +30,16 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <div className="card">
         <header className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200 pb-4">
           <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="text-sm font-semibold">
+            <Link to="/dashboard" className="text-sm font-semibold">
               MedSync
             </Link>
-            <Link href="/documents" className="text-sm text-neutral-600">
+            <Link to="/documents" className="text-sm text-neutral-600">
               Documents
             </Link>
-            <Link href="/medications" className="text-sm text-neutral-600">
+            <Link to="/medications" className="text-sm text-neutral-600">
               Medications
             </Link>
-            <Link href="/ask" className="text-sm text-neutral-600">
+            <Link to="/ask" className="text-sm text-neutral-600">
               Ask
             </Link>
           </div>
@@ -52,7 +50,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
               type="button"
               onClick={async () => {
                 await signOut();
-                router.replace("/sign-in");
+                navigate("/sign-in");
               }}
               className="rounded-md border border-neutral-300 px-3 py-1.5 font-medium"
             >
@@ -61,7 +59,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="pt-6">{children}</main>
+        <main className="pt-6"><Outlet /></main>
       </div>
     </div>
   );
