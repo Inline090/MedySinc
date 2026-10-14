@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     OCR_ENABLED: bool = True
     OCR_LANGUAGE: str = "en"
     OCR_DPI: int = 200
-    OCR_MAX_PAGES: int = 10
+    OCR_MAX_PAGES: int = 15
     EMBEDDING_MODEL: str = "BAAI/bge-m3"
     EMBEDDING_DIMENSION: int = 1024
     MODEL_CACHE_DIR: str | None = None
@@ -36,8 +36,6 @@ class Settings(BaseSettings):
     HNSW_EF_SEARCH: int = 100
     MIN_SIMILARITY: float = 0.40
     CONFIDENT_SIMILARITY: float = 0.6
-    ANSWER_CACHE_ENABLED: bool = True
-    ANSWER_CACHE_TTL_HOURS: int = 24
     RERANK_ENABLED: bool = True
     RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     RERANK_CANDIDATES: int = 20

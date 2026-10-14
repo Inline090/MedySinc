@@ -42,7 +42,6 @@ export interface Answer {
   sources: AnswerSource[];
   model: string | null;
   confidence: "Low" | "High" | null;
-  cached: boolean;
 }
 
 export interface Medicine {

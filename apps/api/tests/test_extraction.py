@@ -1,11 +1,9 @@
 import pymupdf
 import pytest
 
-from app.ai.extraction import extract_text, needs_ocr
+from app.ai.extraction import extract_text
 from app.core.config import settings
 from app.core.exceptions import AppError
-
-LONG_TEXT = "Haemoglobin 13.5 g/dL and total leucocyte count 7500 cells per microlitre"
 
 
 def _png_with_text(text: str) -> bytes:
@@ -50,34 +48,43 @@ def _scanned_pdf(text: str, pages: int = 1) -> bytes:
     return data
 
 
-def test_needs_ocr_flags_text_that_is_too_short_to_use():
-    """Checks that short text triggers OCR because it's likely just noise."""
-    assert needs_ocr("") is True
-    assert needs_ocr("too short") is True
-    assert needs_ocr("x" * 60) is False
-
-
-def test_a_pdf_with_a_text_layer_is_read_without_running_ocr(monkeypatch):
-    """Checks that PDFs with text layers bypass the slow OCR step."""
+def test_an_image_is_read_by_the_model_and_not_by_ocr(monkeypatch):
+    """Images hold handwriting, so they must never reach the local OCR engine."""
 
     def explode(*_args, **_kwargs):
-        raise AssertionError("OCR should not run when a PDF has a text layer")
+        raise AssertionError("an image should not be sent to the OCR engine")
 
-    monkeypatch.setattr("app.ai.extraction._ocr_pdf", explode)
+    monkeypatch.setattr("app.ai.extraction._ocr_image", explode)
+    monkeypatch.setattr("app.ai.extraction.read_image", lambda data, mime: "Dolo 650 mg")
 
-    assert "Haemoglobin" in extract_text(_pdf_with_text_layer(LONG_TEXT), "application/pdf")
-
-
-def test_ocr_disabled_returns_no_text_from_an_image(monkeypatch):
-    """Checks that disabling OCR returns empty text for images."""
-    monkeypatch.setattr(settings, "OCR_ENABLED", False)
-
-    assert extract_text(_png_with_text("Paracetamol"), "image/png") == ""
+    assert extract_text(_png_with_text("ignored"), "image/png") == "Dolo 650 mg"
 
 
-def test_ocr_reads_text_out_of_an_image():
-    """Checks that OCR correctly extracts text from an image."""
-    assert "paracetamol" in extract_text(_png_with_text("Paracetamol"), "image/png").lower()
+def test_the_image_model_receives_the_file_type(monkeypatch):
+    """The model is told what kind of image it is looking at."""
+
+    seen = {}
+
+    def remember(data, mime_type):
+        seen["mime"] = mime_type
+        return "text"
+
+    monkeypatch.setattr("app.ai.extraction.read_image", remember)
+
+    extract_text(_png_with_text("anything"), "image/jpeg")
+
+    assert seen["mime"] == "image/jpeg"
+
+
+def test_a_pdf_is_read_by_ocr(monkeypatch):
+    """PDFs hold printed text, so they go through the OCR engine."""
+
+    monkeypatch.setattr("app.ai.extraction._ocr_image", lambda data: "Paracetamol")
+
+    assert (
+        "paracetamol"
+        in extract_text(_pdf_with_text_layer("Paracetamol"), "application/pdf").lower()
+    )
 
 
 def test_ocr_reads_a_pdf_that_has_no_text_layer():
@@ -85,15 +92,23 @@ def test_ocr_reads_a_pdf_that_has_no_text_layer():
     assert "paracetamol" in extract_text(_scanned_pdf("Paracetamol"), "application/pdf").lower()
 
 
-def test_a_scanned_pdf_over_the_page_limit_is_rejected_before_ocr(monkeypatch):
-    """Checks that scanned PDFs over the page limit are blocked early."""
+def test_a_pdf_over_the_page_limit_is_rejected_before_ocr(monkeypatch):
+    """Checks that PDFs over the page limit are blocked early."""
     monkeypatch.setattr(settings, "OCR_MAX_PAGES", 1)
 
     with pytest.raises(AppError):
         extract_text(_scanned_pdf("Paracetamol", pages=2), "application/pdf")
 
 
-def test_an_unreadable_image_is_rejected_cleanly():
-    """Checks that invalid image bytes return an error instead of crashing."""
+def test_ocr_disabled_returns_no_text(monkeypatch):
+    """Disabling OCR leaves PDFs empty rather than crashing."""
+    monkeypatch.setattr(settings, "OCR_ENABLED", False)
+
+    assert extract_text(_scanned_pdf("Paracetamol"), "application/pdf") == ""
+
+
+def test_an_unsupported_file_type_is_rejected():
+    """Anything that is not a PDF or an image is refused."""
+
     with pytest.raises(AppError):
-        extract_text(b"not an image at all", "image/png")
+        extract_text(b"col, row", "text/csv")

@@ -112,21 +112,3 @@ async def test_nothing_relevant_is_refused_without_calling_the_model(
     assert body["sources"] == []
     assert body["model"] is None
     assert llm.calls == 0
-
-
-async def test_the_uncertain_state_survives_a_cache_round_trip(client: AsyncClient, monkeypatch):
-    """Checks that a cached 'Low' confidence answer keeps its label."""
-
-    async def weak_retrieval(**_kwargs):
-        return Retrieval(chunks=[_chunk(0.5)], best_similarity=0.5)
-
-    monkeypatch.setattr("app.ai.answers.find_relevant_chunks", weak_retrieval)
-
-    await _sign_in(client)
-
-    await client.post(ASK, json={"question": "borderline question"})
-    second = await client.post(ASK, json={"question": "borderline question"})
-
-    assert second.json()["cached"] is True
-    assert second.json()["status"] == "uncertain"
-    assert second.json()["confidence"] == "Low"

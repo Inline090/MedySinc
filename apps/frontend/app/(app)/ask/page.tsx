@@ -101,10 +101,6 @@ export default function AskPage() {
       </div>
 
       <form onSubmit={onSubmit} className="mt-6 border-t border-neutral-200 pt-6">
-        <p className="text-xs text-neutral-400">
-          Each question is searched on its own, so ask it in full rather than as a follow-up.
-        </p>
-
         <textarea
           value={question}
           required
@@ -162,8 +158,6 @@ function AnswerBubble({ answer }: { answer: Answer }) {
             {answer.sources.length}
           </button>
         ) : null}
-
-        {answer.cached ? <span className="text-neutral-400">cached</span> : null}
       </div>
 
       {showSources ? (

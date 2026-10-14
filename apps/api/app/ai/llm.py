@@ -55,3 +55,34 @@ def get_llm() -> LLMProvider:
         raise AppError("No AI provider key is configured", 503)
 
     return GeminiProvider(settings.AI_API_KEY, settings.LLM_MODEL)
+
+
+IMAGE_INSTRUCTION = (
+    "Transcribe every piece of text in this image exactly as written. "
+    "Do not summarise it, explain it, or add anything of your own. "
+    "Keep the reading order. If the image holds no text, return nothing."
+)
+
+
+def read_image(data: bytes, mime_type: str) -> str:
+    """Asks the vision model to transcribe the text in an image.
+
+    Images are usually handwritten, which the local OCR engine reads badly.
+    This is synchronous, so call it through a thread like the other blocking work.
+    """
+
+    if not settings.AI_API_KEY:
+        raise AppError("No AI provider key is configured", 503)
+
+    client = genai.Client(api_key=settings.AI_API_KEY)
+
+    response = client.models.generate_content(
+        model=settings.LLM_MODEL,
+        contents=[
+            genai.types.Part.from_bytes(data=data, mime_type=mime_type),
+            IMAGE_INSTRUCTION,
+        ],
+        config=genai.types.GenerateContentConfig(temperature=0),
+    )
+
+    return (response.text or "").strip()
