@@ -11,12 +11,19 @@ REFRESH_COOKIE_PATH = "/api/v1/auth/refresh"
 
 
 def _options(max_age: int, path: str = "/") -> dict[str, Any]:
-    """Creates the standard cookie settings used by both tokens."""
+    """Creates the standard cookie settings used by both tokens.
+
+    In production the client and the API sit on different origins, so the cookie
+    needs SameSite=None to cross them. Browsers only accept None alongside Secure,
+    and both hosts serve HTTPS. Local development stays on Lax over plain HTTP.
+    """
+
+    production = settings.ENVIRONMENT == "production"
 
     return {
         "httponly": True,
-        "samesite": "lax",
-        "secure": settings.ENVIRONMENT == "production",
+        "samesite": "none" if production else "lax",
+        "secure": production,
         "max_age": max_age,
         "path": path,
     }

@@ -1,34 +1,44 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MedSync web client
 
-## Getting Started
+A single page app built with React 19, React Router and Vite.
 
-First, run the development server:
+## Running it
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+It starts on http://localhost:3000 and talks to the API at http://localhost:8000
+unless `VITE_API_URL` says otherwise.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## Building it
 
-## Learn More
+```bash
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+The output is static files in `dist/`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`VITE_API_URL` is baked in at build time, so changing it needs a rebuild, not a
+restart.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Layout
 
-## Deploy on Vercel
+```
+src/
+  main.tsx        mounts React and sets up the router and the session
+  App.tsx         the route table
+  layouts/        AppShell (signed in) and AuthShell (signed out)
+  pages/          one file per screen
+  components/     shared pieces
+  lib/            the API client, the session context and the response types
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Notes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The API client is plain `fetch`. When a request comes back 401 it refreshes the
+session once and retries, so an expired access token is invisible to the user.
+
+Session state lives in React context. There is no store, because the server owns the
+data and each page fetches what it needs.
