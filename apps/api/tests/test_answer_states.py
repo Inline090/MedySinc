@@ -47,7 +47,7 @@ async def test_a_weak_match_is_answered_with_low_confidence(client: AsyncClient,
     """Answers with 'Low' confidence if the match is weak."""
 
     async def weak_retrieval(**_kwargs):
-        return Retrieval(chunks=[_chunk(0.5)], best_similarity=0.5)
+        return Retrieval(chunks=[_chunk(0.6)], best_similarity=0.6)
 
     llm = _CountingLLM()
 

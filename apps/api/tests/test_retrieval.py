@@ -87,8 +87,8 @@ async def _seed_document(pool, *, email: str, status: str = "processed") -> tupl
 
 
 def _axis_vector(axis: int) -> str:
-    """Creates a 1024-dimensional vector string with a 1 at the specified axis."""
-    values = ["0"] * 1024
+    """Creates a 768-dimensional vector string with a 1 at the specified axis."""
+    values = ["0"] * 768
     values[axis] = "1"
 
     return "[" + ",".join(values) + "]"
@@ -130,7 +130,7 @@ async def test_vector_search_orders_by_cosine_similarity(client: AsyncClient):
 
     rows = await search_chunks_by_vector(
         user_id=user_id,
-        embedding=[1.0] + [0.0] * 1023,
+        embedding=[1.0] + [0.0] * 767,
         limit=5,
     )
 
@@ -157,7 +157,7 @@ async def test_search_never_returns_another_users_chunks(client: AsyncClient):
         axis=0,
     )
 
-    query = [1.0] + [0.0] * 1023
+    query = [1.0] + [0.0] * 767
 
     for row in await search_chunks_by_vector(user_id=mine, embedding=query, limit=10):
         assert row["content"] == "my haemoglobin"
@@ -186,7 +186,7 @@ async def test_search_ignores_documents_that_are_not_processed(client: AsyncClie
 
     rows = await search_chunks_by_vector(
         user_id=pending_user,
-        embedding=[1.0] + [0.0] * 1023,
+        embedding=[1.0] + [0.0] * 767,
         limit=10,
     )
 
@@ -214,7 +214,7 @@ async def test_text_search_matches_on_an_exact_term(client: AsyncClient):
 
     rows = await search_chunks_by_text(
         user_id=user_id,
-        embedding=[1.0] + [0.0] * 1023,
+        embedding=[1.0] + [0.0] * 767,
         query="Dolo",
         limit=10,
     )
