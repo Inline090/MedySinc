@@ -36,3 +36,6 @@ apps/api/models/
 Thumbs.db
 .vscode/
 .idea/
+
+# Cloud Run secrets, never committed
+cloudrun.env.yaml

@@ -1,0 +1,12 @@
+.venv/
+models/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+*.pyc
+storage/
+benchmarks/
+.env
+cloudrun.env.yaml
+*.log

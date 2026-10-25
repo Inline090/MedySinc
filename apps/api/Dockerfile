@@ -22,12 +22,17 @@ ENV PYTHONUNBUFFERED=1
 # Bake the embedding model into the image. The build gets slower and the image gets
 # about 2.3 GB bigger, and in exchange a container restart is instant instead of
 # downloading a model before it can serve anything.
-ARG EMBEDDING_MODEL=BAAI/bge-m3
+ARG EMBEDDING_MODEL=Alibaba-NLP/gte-modernbert-base
 ENV MODEL_CACHE_DIR=/models
 RUN python -c "\
 from sentence_transformers import SentenceTransformer; \
 SentenceTransformer('${EMBEDDING_MODEL}', cache_folder='/models')"
 
-EXPOSE 8000
+# Pre-download the reranker too, so a cold start does not fetch it at request time.
+RUN python -c "\
+from sentence_transformers import CrossEncoder; \
+CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2', cache_folder='/models')"
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 8080
+
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
