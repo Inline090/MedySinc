@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/react";
 import { Route, Routes } from "react-router-dom";
 
 import AppShell from "@/layouts/AppShell";
@@ -13,21 +14,24 @@ import SignUp from "@/pages/SignUp";
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
+    <>
+      <Routes>
+        <Route path="/" element={<Home />} />
 
-      <Route element={<AuthShell />}>
-        <Route path="/sign-in" element={<SignIn />} />
-        <Route path="/sign-up" element={<SignUp />} />
-      </Route>
+        <Route element={<AuthShell />}>
+          <Route path="/sign-in" element={<SignIn />} />
+          <Route path="/sign-up" element={<SignUp />} />
+        </Route>
 
-      <Route element={<AppShell />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/documents" element={<Documents />} />
-        <Route path="/documents/:id" element={<DocumentDetail />} />
-        <Route path="/medications" element={<Medications />} />
-        <Route path="/ask" element={<Ask />} />
-      </Route>
-    </Routes>
+        <Route element={<AppShell />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/documents" element={<Documents />} />
+          <Route path="/documents/:id" element={<DocumentDetail />} />
+          <Route path="/medications" element={<Medications />} />
+          <Route path="/ask" element={<Ask />} />
+        </Route>
+      </Routes>
+      <Analytics />
+    </>
   );
 }
