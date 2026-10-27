@@ -1,12 +1,13 @@
-.venv/
-models/
-.mypy_cache/
-.pytest_cache/
-.ruff_cache/
-__pycache__/
-*.pyc
-storage/
-benchmarks/
-.env
-cloudrun.env.yaml
-*.log
+# Root-anchored on purpose. A bare storage/ matches app/storage at any depth,
+# which is a source package, and the container then fails to import.
+/.venv
+/models
+/.mypy_cache
+/.pytest_cache
+/.ruff_cache
+/.env
+/cloudrun.env.yaml
+/storage
+/benchmarks
+**/__pycache__
+**/*.pyc
